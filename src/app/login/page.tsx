@@ -34,6 +34,8 @@ export default function LoginPage() {
       const role = data.user.role;
       if (role === 'ADMIN' || role === 'MANAGER') {
         router.push('/admin');
+      } else if (role === 'MARKETING') {
+        router.push('/marketing');
       } else if (role === 'BOOKING') {
         router.push('/booking-staff');
       } else if (role === 'RECEPTION') {

@@ -21,13 +21,14 @@ const NAV_ITEMS = [
   { href: '/admin/menu', label: 'Thực đơn', short: 'TĐ', roles: ['ADMIN', 'MANAGER'] },
   { href: '/admin/users', label: 'Nhân viên', short: 'NV', roles: ['ADMIN'] },
   { href: '/admin/reports', label: 'Báo cáo', short: 'BC', roles: ['ADMIN', 'MANAGER'] },
-  { href: '/admin/events', label: 'Sự kiện', short: 'SK', roles: ['ADMIN', 'MANAGER'] },
+  { href: '/admin/events', label: 'Sự kiện', short: 'SK', roles: ['ADMIN', 'MANAGER', 'MARKETING'] },
   { href: '/admin/settings', label: 'Cài đặt', short: 'CĐ', roles: ['ADMIN'] },
 ];
 
 const ROLE_LABELS: Record<string, string> = {
   ADMIN: 'Quản trị viên',
   MANAGER: 'Quản lý',
+  MARKETING: 'Marketing',
   BOOKING: 'Nhân viên booking',
   RECEPTION: 'Lễ tân',
   WAITER: 'Phục vụ',
@@ -75,6 +76,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       const data = await res.json();
       if (!data.success || !data.user) { router.replace('/login'); return; }
       const u = data.user as AuthUser;
+      if (u.role === 'MARKETING') { router.replace('/marketing'); return; }
       if (u.role === 'BOOKING') { router.replace('/booking-staff'); return; }
       if (u.role === 'RECEPTION') { router.replace('/reception'); return; }
       if (u.role === 'WAITER') { router.replace('/waiter'); return; }
