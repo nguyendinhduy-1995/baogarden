@@ -782,7 +782,7 @@ const CSS = `
   justify-content: space-between;
 }
 .hp-logo {
-  font-family: 'Cinzel', serif;
+  font-family: 'Cormorant Garamond', serif;
   font-size: 24px;
   font-weight: 800;
   color: #D4A84A;
@@ -939,7 +939,7 @@ const CSS = `
   max-width: 720px;
 }
 .hp-hero-title {
-  font-family: 'Cinzel', serif;
+  font-family: 'Cormorant Garamond', serif;
   font-weight: 800;
   line-height: 1.2;
   margin-bottom: 20px;
@@ -1078,7 +1078,7 @@ const CSS = `
 
 /* ─── Section Title ─── */
 .hp-section-title {
-  font-family: 'Cinzel', serif;
+  font-family: 'Cormorant Garamond', serif;
   font-size: 32px;
   font-weight: 700;
   line-height: 1.2;
@@ -1271,7 +1271,7 @@ const CSS = `
   box-shadow: 0 0 40px rgba(74, 222, 128, 0.2);
 }
 .hp-booking-success h3 {
-  font-family: 'Cinzel', serif;
+  font-family: 'Cormorant Garamond', serif;
   font-size: 22px;
   font-weight: 700;
   margin-bottom: 12px;
@@ -1295,7 +1295,7 @@ const CSS = `
   font-style: italic;
   color: rgba(212, 168, 74, 0.7);
   margin-bottom: 40px;
-  font-family: 'Cinzel', serif;
+  font-family: 'Cormorant Garamond', serif;
   line-height: 1.5;
 }
 .hp-emotion-grid {
@@ -1316,7 +1316,7 @@ const CSS = `
 }
 
 .hp-emotion-card-title {
-  font-family: 'Cinzel', serif;
+  font-family: 'Cormorant Garamond', serif;
   font-size: 20px;
   font-weight: 700;
   margin-bottom: 12px;
@@ -1370,7 +1370,7 @@ const CSS = `
   padding: 20px;
 }
 .hp-space-name {
-  font-family: 'Cinzel', serif;
+  font-family: 'Cormorant Garamond', serif;
   font-size: 18px;
   font-weight: 700;
   color: #e2ddd5;
@@ -1450,7 +1450,7 @@ const CSS = `
   margin-bottom: 16px;
 }
 .hp-today-title {
-  font-family: 'Cinzel', serif;
+  font-family: 'Cormorant Garamond', serif;
   font-size: 24px;
   font-weight: 700;
   margin-bottom: 8px;
@@ -1629,7 +1629,7 @@ const CSS = `
   margin-bottom: 12px;
 }
 .hp-upcoming-title {
-  font-family: 'Cinzel', serif;
+  font-family: 'Cormorant Garamond', serif;
   font-size: 18px;
   font-weight: 700;
   margin-bottom: 8px;
@@ -1674,7 +1674,7 @@ const CSS = `
   transform: translateY(-4px);
 }
 .hp-party-title {
-  font-family: 'Cinzel', serif;
+  font-family: 'Cormorant Garamond', serif;
   font-size: 18px;
   font-weight: 700;
   color: #D4A84A;
@@ -1737,7 +1737,7 @@ const CSS = `
   transform: translateY(-2px);
 }
 .hp-promo-title {
-  font-family: 'Cinzel', serif;
+  font-family: 'Cormorant Garamond', serif;
   font-size: 17px;
   font-weight: 700;
   color: #D4A84A;
@@ -1813,7 +1813,7 @@ const CSS = `
   margin-bottom: 40px;
 }
 .hp-footer-brand {
-  font-family: 'Cinzel', serif;
+  font-family: 'Cormorant Garamond', serif;
   font-size: 24px;
   font-weight: 800;
   color: #D4A84A;
@@ -1883,7 +1883,7 @@ const CSS = `
   text-decoration: none;
   font-size: 12px;
   font-weight: 700;
-  font-family: 'Cinzel', serif;
+  font-family: 'Cormorant Garamond', serif;
   letter-spacing: 0.05em;
   transition: color 0.15s;
   min-height: 48px;
