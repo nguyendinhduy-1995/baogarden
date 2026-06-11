@@ -11,6 +11,7 @@ async function main() {
   const users: Record<string, { name: string; role: string; phone: string }> = {
     'admin@baogarden.vn': { name: 'Admin Hệ Thống', role: 'ADMIN', phone: '0900000001' },
     'manager@baogarden.vn': { name: 'Nguyễn Quản Lý', role: 'MANAGER', phone: '0900000002' },
+    'marketing@baogarden.vn': { name: 'Marketing Team', role: 'MARKETING', phone: '0900000010' },
     'booking@baogarden.vn': { name: 'Trần Booking', role: 'BOOKING', phone: '0900000007' },
     'reception@baogarden.vn': { name: 'Lê Lễ Tân', role: 'RECEPTION', phone: '0900000008' },
     'waiter@baogarden.vn': { name: 'Phạm Phục Vụ', role: 'WAITER', phone: '0900000003' },
@@ -29,7 +30,7 @@ async function main() {
     });
     userRecords[info.role] = u.id;
   }
-  console.log('✅ 9 tài khoản nhân viên');
+  console.log('✅ 10 tài khoản nhân viên (bao gồm Marketing)');
 
   // ==================== CUSTOMERS ====================
   const customerData = [
