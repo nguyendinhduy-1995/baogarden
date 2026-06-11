@@ -216,32 +216,32 @@ export const SPACES: SpaceItem[] = [
   {
     name: 'Main Hall',
     description: 'Không gian chính view sân khấu, nơi năng lượng đêm hội tụ.',
-    image: '/home/hero.png',
+    image: '/home/hall-overview.jpg',
   },
   {
     name: 'VIP Lounge',
     description: 'Phòng riêng tư, ánh sáng mờ ảo – dành cho tiệc sinh nhật, nhóm kín.',
-    image: '/home/birthday.png',
+    image: '/home/vip-area.jpg',
   },
   {
     name: 'Sân Khấu & DJ Booth',
     description: 'Laser, khói, âm bass rung – nơi DJ biểu diễn mỗi đêm.',
-    image: '/home/dj.png',
+    image: '/home/stage-show.jpg',
   },
   {
     name: 'Lounge Bar',
     description: 'Ghế da, nến, cocktail – góc trò chuyện riêng giữa đêm dài.',
-    image: '/home/chill.png',
+    image: '/home/lounge.jpg',
   },
   {
     name: 'Khu Quầy Bar',
     description: 'Ngồi ngay quầy, xem bartender pha chế, chill với ly bia lạnh.',
-    image: '/home/hero.png',
+    image: '/home/bar-counter.jpg',
   },
   {
-    name: 'Khu Nhóm Đông',
-    description: 'Bàn dài cho team building, liên hoan – bao trọn một góc đêm.',
-    image: '/home/chill.png',
+    name: 'Tiệc & Sự Kiện',
+    description: 'Sinh nhật, team building – tổ chức trọn gói trên sân khấu.',
+    image: '/home/birthday-hbd.jpg',
   },
 ];
 

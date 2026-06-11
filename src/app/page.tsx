@@ -246,7 +246,7 @@ export default function HomePage() {
       {/* ═══ 1. HERO ═══ */}
       <section className="hp-hero">
         <div className="hp-hero-bg" ref={heroRef}>
-          <img src="/home/hero.png" alt="Báo Garden" draggable={false} />
+          <img src="/home/hero-real.jpg" alt="Báo Garden" draggable={false} />
           <div className="hp-hero-overlay" />
         </div>
         <div className="hp-hero-sparkle hp-sparkle-1" />
@@ -652,6 +652,37 @@ export default function HomePage() {
             <a href="#" className="hp-btn-gold">Tham Gia Group Giao Lưu</a>
             <a href="#" className="hp-btn-outline">Nhận Lịch Sự Kiện</a>
           </div>
+        </div>
+      </section>
+
+      {/* ═══ 11.5. PHOTO ALBUM ═══ */}
+      <section className="hp-album hp-animate" id="album">
+        <div className="hp-container">
+          <h2 className="hp-section-title">Khoảnh Khắc Tại Báo</h2>
+          <p className="hp-album-sub">Mỗi đêm là một câu chuyện – Mỗi bức ảnh là một kỷ niệm</p>
+        </div>
+        <div className="hp-album-grid">
+          {[
+            { src: '/home/stage-show.jpg', alt: 'DJ & Dancer show' },
+            { src: '/home/food-platter.jpg', alt: 'Đồ ăn thượng hạng' },
+            { src: '/home/party-crowd.jpg', alt: 'Birthday party' },
+            { src: '/home/hall-overview.jpg', alt: 'Main Hall' },
+            { src: '/home/dj-team.jpg', alt: 'DJ Team' },
+            { src: '/home/birthday-hbd.jpg', alt: 'Sinh nhật trên sân khấu' },
+            { src: '/home/crowd-fun.jpg', alt: 'Năng lượng đêm' },
+            { src: '/home/atmosphere.jpg', alt: 'Không khí Báo Garden' },
+            { src: '/home/stage-dj.jpg', alt: 'DJ trên sân khấu' },
+            { src: '/home/crowd-party.jpg', alt: 'Đám đông cuồng nhiệt' },
+            { src: '/home/night-vibe.jpg', alt: 'Night vibe' },
+            { src: '/home/vip-area.jpg', alt: 'VIP Area' },
+          ].map((photo, i) => (
+            <div key={i} className={`hp-album-item ${i === 0 || i === 5 ? 'hp-album-big' : ''}`}>
+              <img src={photo.src} alt={photo.alt} loading="lazy" />
+              <div className="hp-album-overlay">
+                <span className="hp-album-caption">{photo.alt}</span>
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -1833,6 +1864,72 @@ const CSS = `
 }
 
 /* ═══════════════════════════════════════════════════════════════
+   11.5. PHOTO ALBUM
+   ═══════════════════════════════════════════════════════════════ */
+.hp-album {
+  padding: 80px 0;
+  position: relative;
+  z-index: 1;
+}
+.hp-album-sub {
+  text-align: center;
+  font-size: 16px;
+  font-style: italic;
+  color: rgba(212, 168, 74, 0.5);
+  margin-bottom: 40px;
+  font-family: 'Cormorant Garamond', serif;
+  line-height: 1.5;
+}
+.hp-album-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  padding: 0 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.hp-album-item {
+  position: relative;
+  overflow: hidden;
+  border-radius: 8px;
+  aspect-ratio: 1;
+  cursor: pointer;
+}
+.hp-album-big {
+  grid-column: span 2;
+  grid-row: span 2;
+}
+.hp-album-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease, filter 0.3s;
+}
+.hp-album-item:hover img {
+  transform: scale(1.08);
+  filter: brightness(1.1);
+}
+.hp-album-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 50%, rgba(3,7,26,0.85) 100%);
+  display: flex;
+  align-items: flex-end;
+  padding: 16px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.hp-album-item:hover .hp-album-overlay {
+  opacity: 1;
+}
+.hp-album-caption {
+  font-size: 13px;
+  font-weight: 600;
+  color: #D4A84A;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+}
+
+/* ═══════════════════════════════════════════════════════════════
    12. QR ORDER
    ═══════════════════════════════════════════════════════════════ */
 .hp-qr {
@@ -1970,7 +2067,6 @@ const CSS = `
   .hp-quickinfo-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
   .hp-qi-card { padding: 14px; }
   .hp-qi-value { font-size: 12px; }
-  .hp-qi-icon { width: 32px; height: 32px; font-size: 16px; }
 
   /* Section titles */
   .hp-section-title { font-size: 24px; margin-bottom: 24px; }
@@ -1985,6 +2081,7 @@ const CSS = `
   .hp-birthday,
   .hp-promos,
   .hp-community,
+  .hp-album,
   .hp-qr { padding: 48px 0; }
 
   .hp-container { padding: 0 16px; }
@@ -2029,6 +2126,11 @@ const CSS = `
 
   /* QR */
   .hp-qr-text { font-size: 14px; }
+
+  /* Album */
+  .hp-album-grid { grid-template-columns: repeat(2, 1fr); gap: 4px; padding: 0 16px; }
+  .hp-album-big { grid-column: span 2; grid-row: span 2; }
+  .hp-album-sub { font-size: 14px; margin-bottom: 24px; }
 
   /* Day tabs */
   .hp-day-tab { width: 42px; height: 42px; }
