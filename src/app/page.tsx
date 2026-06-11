@@ -502,10 +502,9 @@ export default function HomePage() {
               />
               <div className="hp-poster-fallback">
                 <div className="hp-today-tag" style={{ background: EVENT_TYPE_COLORS[todayEvent.type] || '#D4A84A' }}>
-                  {todayEvent.name}
+                  {todayEvent.day}
                 </div>
-                <h3 className="hp-today-title">{todayEvent.day}</h3>
-                <p className="hp-today-time">{todayEvent.time}</p>
+                <h3 className="hp-today-title">{todayEvent.name}</h3>
                 <p className="hp-today-desc">{todayEvent.description}</p>
                 <Link href="/booking" className="hp-btn-gold hp-btn-sm">
                   {todayIdx === activeDay ? 'Đặt Bàn Cho Đêm Nay' : 'Đặt Bàn'}
@@ -1461,19 +1460,21 @@ const CSS = `
    ═══════════════════════════════════════════════════════════════ */
 .hp-today {
   padding: 80px 0;
+  position: relative;
+  z-index: 1;
 }
 .hp-day-tabs {
   display: flex;
   justify-content: center;
-  gap: 8px;
-  margin-bottom: 32px;
+  gap: 10px;
+  margin-bottom: 40px;
   flex-wrap: wrap;
 }
 .hp-day-tab {
   position: relative;
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1481,18 +1482,20 @@ const CSS = `
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.06);
   cursor: pointer;
-  transition: all 0.2s;
-  color: rgba(226, 221, 213, 0.5);
+  transition: all 0.25s;
+  color: rgba(226, 221, 213, 0.45);
   font-weight: 600;
 }
 .hp-day-tab:hover {
-  border-color: rgba(212, 168, 74, 0.3);
+  border-color: rgba(212, 168, 74, 0.4);
   color: #D4A84A;
+  background: rgba(212, 168, 74, 0.06);
 }
 .hp-day-tab-active {
-  background: rgba(212, 168, 74, 0.12);
+  background: rgba(212, 168, 74, 0.15);
   border-color: #D4A84A;
   color: #D4A84A;
+  box-shadow: 0 0 20px rgba(212, 168, 74, 0.12);
 }
 .hp-day-tab-today { position: relative; }
 .hp-day-tab-dot {
@@ -1501,45 +1504,61 @@ const CSS = `
   border-radius: 50%;
   background: #4ade80;
   position: absolute;
-  bottom: 5px;
+  bottom: 6px;
 }
-.hp-day-tab-short { font-size: 13px; }
-.hp-today-card {
-  max-width: 600px;
+.hp-day-tab-short { font-size: 14px; letter-spacing: 0.02em; }
+
+/* Poster wrapper */
+.hp-poster-wrap {
+  max-width: 640px;
   margin: 0 auto;
-  padding: 32px;
-  border-radius: 20px;
+  position: relative;
+  border-radius: 24px;
+  overflow: hidden;
   background: rgba(255, 255, 255, 0.03);
-  border: 1px solid;
-  text-align: center;
-  animation: hp-slideDown 0.3s ease;
+  border: 1px solid rgba(212, 168, 74, 0.12);
+  box-shadow: 0 0 60px rgba(120, 80, 220, 0.06), 0 0 30px rgba(212, 168, 74, 0.04);
+  animation: hp-slideDown 0.35s ease;
 }
+.hp-poster-img {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 24px;
+}
+.hp-poster-fallback {
+  padding: 48px 40px;
+  text-align: center;
+}
+
 .hp-today-tag {
   display: inline-block;
-  padding: 4px 14px;
+  padding: 5px 16px;
   border-radius: 100px;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
-  color: #061240;
-  margin-bottom: 16px;
+  color: #03071a;
+  margin-bottom: 20px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 .hp-today-title {
   font-family: 'Cormorant Garamond', serif;
-  font-size: 24px;
+  font-size: 36px;
   font-weight: 700;
-  margin-bottom: 8px;
-}
-.hp-today-time {
-  font-size: 14px;
-  color: rgba(226, 221, 213, 0.5);
-  margin-bottom: 12px;
-  font-weight: 500;
+  margin-bottom: 16px;
+  color: #e8e4f0;
+  text-shadow: 0 0 30px rgba(212,168,74,0.1);
+  line-height: 1.2;
 }
 .hp-today-desc {
-  font-size: 15px;
-  line-height: 1.6;
-  color: rgba(226, 221, 213, 0.7);
-  margin-bottom: 24px;
+  font-size: 16px;
+  line-height: 1.7;
+  color: rgba(226, 221, 213, 0.6);
+  margin-bottom: 28px;
+  max-width: 440px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 /* ═══════════════════════════════════════════════════════════════
