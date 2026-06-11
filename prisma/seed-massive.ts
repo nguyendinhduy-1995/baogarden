@@ -119,14 +119,14 @@ async function main() {
   let itemCount = 0;
 
   for (const table of sessionTables) {
-    const sessionStatus = randomPick(['OPEN', 'OPEN', 'PAYMENT_REQUESTED', 'CLOSED', 'CLOSED']);
+    const sessionStatus = randomPick(['OPEN', 'OPEN', 'PAYMENT_REQUESTED', 'PAID', 'PAID']);
 
     const session = await prisma.tableSession.create({
       data: {
         tableId: table.id,
         status: sessionStatus as any,
         openedByUserId: waiterId,
-        closedAt: sessionStatus === 'CLOSED' ? new Date() : undefined,
+        closedAt: sessionStatus === 'PAID' ? new Date() : undefined,
       },
     });
     sessionCount++;
@@ -142,7 +142,7 @@ async function main() {
         const menuItem = randomPick([...kitchenItems, ...barItems]);
         const qty = menuItem.department === 'BAR' ? randomInt(1, 10) : randomInt(1, 3);
         const price = Number(menuItem.price);
-        const itemStatus = sessionStatus === 'CLOSED' ? 'SERVED' : randomPick(['PENDING', 'PREPARING', 'READY', 'SERVED']);
+        const itemStatus = sessionStatus === 'PAID' ? 'SERVED' : randomPick(['PENDING', 'PREPARING', 'READY', 'SERVED']);
 
         orderItems.push({
           menuItemId: menuItem.id,
@@ -165,7 +165,7 @@ async function main() {
             tableSessionId: session.id,
             createdByUserId: waiterId,
             source: 'WAITER',
-            status: sessionStatus === 'CLOSED' ? 'COMPLETED' : 'SUBMITTED',
+            status: sessionStatus === 'PAID' ? 'SERVED' : 'SUBMITTED',
             subtotal,
             items: { create: orderItems.map(i => ({ ...i, status: i.status as any, department: i.department as any })) },
           },
