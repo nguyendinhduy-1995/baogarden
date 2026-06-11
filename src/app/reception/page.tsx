@@ -3,43 +3,23 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 
-
-interface UserData {
-  id: string;
-  name: string;
-  role: string;
-}
-
+interface UserData { id: string; name: string; role: string; }
 interface BookingData {
-  id: string;
-  bookingCode: string;
-  bookingDate: string;
-  bookingTime: string;
-  guestCount: number;
-  status: string;
-  depositAmount: string;
-  minSpend: string;
-  note: string;
+  id: string; bookingCode: string; bookingDate: string; bookingTime: string;
+  guestCount: number; status: string; depositAmount: string; minSpend: string; note: string;
   customer: { name: string; phone: string };
   table: { code: string; area?: { name: string } };
   createdByUser?: { name: string } | null;
 }
 
-const STATUS_MAP: Record<string, { label: string; badge: string; color: string }> = {
-  PENDING: { label: 'Chờ XN', badge: 'badge-gold', color: '#f59e0b' },
-  CONFIRMED: { label: 'Đã XN', badge: 'badge-blue', color: '#3b82f6' },
-  ARRIVED: { label: 'Đã đến', badge: 'badge-green', color: '#4ade80' },
-  CANCELLED: { label: 'Hủy', badge: 'badge-red', color: '#ef4444' },
-  NO_SHOW: { label: 'Không đến', badge: 'badge-gray', color: '#6b7280' },
-  COMPLETED: { label: 'Hoàn tất', badge: 'badge-purple', color: '#8b5cf6' },
+const ST: Record<string, { label: string; color: string; bg: string }> = {
+  PENDING:   { label: 'Chờ xác nhận', color: '#D4A84A', bg: 'rgba(212,168,74,0.1)' },
+  CONFIRMED: { label: 'Đã xác nhận', color: '#60a5fa', bg: 'rgba(96,165,250,0.1)' },
+  ARRIVED:   { label: 'Đã đến', color: '#4ade80', bg: 'rgba(74,222,128,0.1)' },
+  CANCELLED: { label: 'Đã hủy', color: '#f87171', bg: 'rgba(248,113,113,0.08)' },
+  NO_SHOW:   { label: 'Không đến', color: '#6b7280', bg: 'rgba(107,114,128,0.08)' },
+  COMPLETED: { label: 'Hoàn tất', color: '#a78bfa', bg: 'rgba(167,139,250,0.08)' },
 };
-
-const TIME_GROUPS = [
-  { label: '18:00 - 19:30', times: ['18:00', '18:30', '19:00', '19:30'] },
-  { label: '20:00 - 21:30', times: ['20:00', '20:30', '21:00', '21:30'] },
-  { label: '22:00 - 23:30', times: ['22:00', '22:30', '23:00', '23:30'] },
-  { label: '00:00 - 01:00', times: ['00:00', '00:30', '01:00'] },
-];
 
 export default function ReceptionPage() {
   const router = useRouter();
@@ -47,21 +27,18 @@ export default function ReceptionPage() {
   const [bookings, setBookings] = useState<BookingData[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
-  const [toast, setToast] = useState<{ message: string; type: string } | null>(null);
-  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [now, setNow] = useState(new Date());
 
   useEffect(() => {
-    fetch('/api/auth/me')
-      .then(r => r.json())
-      .then(data => {
-        if (!data.success || !['RECEPTION', 'ADMIN', 'MANAGER'].includes(data.user.role)) {
-          router.push('/login');
-          return;
-        }
-        setUser(data.user);
-      })
-      .catch(() => router.push('/login'));
+    fetch('/api/auth/me').then(r => r.json()).then(d => {
+      if (!d.success || !['RECEPTION', 'ADMIN', 'MANAGER'].includes(d.user.role)) { router.push('/login'); return; }
+      setUser(d.user);
+    }).catch(() => router.push('/login'));
   }, [router]);
+
+  useEffect(() => { const t = setInterval(() => setNow(new Date()), 60000); return () => clearInterval(t); }, []);
 
   const fetchBookings = useCallback(async () => {
     setLoading(true);
@@ -69,219 +46,190 @@ export default function ReceptionPage() {
       const res = await fetch('/api/bookings/today');
       const data = await res.json();
       if (data.success) setBookings(data.data);
-    } catch { /* ignore */ }
+    } catch { /* */ }
     finally { setLoading(false); }
   }, []);
 
   useEffect(() => { fetchBookings(); }, [fetchBookings]);
+  // Auto-refresh every 30s
+  useEffect(() => { const t = setInterval(fetchBookings, 30000); return () => clearInterval(t); }, [fetchBookings]);
 
-  const showToast = (message: string, type = 'success') => {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 3000);
-  };
+  const flash = (msg: string, ok = true) => { setToast({ msg, ok }); setTimeout(() => setToast(null), 2500); };
 
-  const updateStatus = async (bookingId: string, status: string) => {
-    setActionLoading(bookingId);
+  const updateStatus = async (id: string, status: string) => {
+    setBusy(id);
     try {
-      const res = await fetch(`/api/bookings/${bookingId}/status`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status }),
-      });
+      const res = await fetch(`/api/bookings/${id}/status`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) });
       const data = await res.json();
-      if (data.success) {
-        showToast('Cập nhật thành công');
-        fetchBookings();
-      } else {
-        showToast(data.error || 'Cập nhật thất bại', 'error');
-      }
-    } catch {
-      showToast('Lỗi server', 'error');
-    } finally {
-      setActionLoading(null);
-    }
+      data.success ? (flash('Cập nhật thành công'), fetchBookings()) : flash(data.error || 'Lỗi', false);
+    } catch { flash('Lỗi server', false); }
+    finally { setBusy(null); }
   };
 
-  const handleLogout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST' });
-    router.push('/login');
-  };
+  const handleLogout = async () => { await fetch('/api/auth/logout', { method: 'POST' }); router.push('/login'); };
 
-  const filteredBookings = filter === 'all' ? bookings : bookings.filter(b => b.status === filter);
+  const filtered = filter === 'all' ? bookings : bookings.filter(b => b.status === filter);
+  const pending = bookings.filter(b => b.status === 'PENDING').length;
+  const confirmed = bookings.filter(b => b.status === 'CONFIRMED').length;
+  const arrived = bookings.filter(b => b.status === 'ARRIVED').length;
+  const totalGuests = bookings.filter(b => !['CANCELLED', 'NO_SHOW'].includes(b.status)).reduce((s, b) => s + b.guestCount, 0);
 
-  const stats = {
-    total: bookings.length,
-    pending: bookings.filter(b => b.status === 'PENDING').length,
-    confirmed: bookings.filter(b => b.status === 'CONFIRMED').length,
-    arrived: bookings.filter(b => b.status === 'ARRIVED').length,
-  };
+  // Group by time slots
+  const slots = [
+    { label: 'Chiều tối', range: '18:00 – 19:30', times: ['18:00','18:30','19:00','19:30'] },
+    { label: 'Tối', range: '20:00 – 21:30', times: ['20:00','20:30','21:00','21:30'] },
+    { label: 'Khuya', range: '22:00 – 23:30', times: ['22:00','22:30','23:00','23:30'] },
+    { label: 'Sau nửa đêm', range: '00:00+', times: ['00:00','00:30','01:00','01:30','02:00'] },
+  ];
 
-  if (!user) return (
-    <>
-      <style>{rcStyles}</style>
-      <div className="rc-loading"><div className="rc-spinner" /></div>
-    </>
-  );
+  const currentHour = now.getHours();
+  const greeting = currentHour < 18 ? 'Chào buổi chiều' : currentHour < 22 ? 'Chào buổi tối' : 'Chào buổi khuya';
+
+  if (!user) return (<><style>{CSS}</style><div className="rc"><div className="rc-spin" /></div></>);
 
   return (
     <>
-      <style>{rcStyles}</style>
-      <div className="rc-page">
-        {/* Header */}
-        <header className="rc-header">
-          <div className="rc-header-inner">
-            <div className="rc-header-left">
-              <h1 className="rc-header-title">Lễ tân</h1>
-              <p className="rc-header-sub">
-                Booking hôm nay • {new Date().toLocaleDateString('vi-VN', { weekday: 'long', day: 'numeric', month: 'long' })}
-              </p>
+      <style>{CSS}</style>
+      <div className="rc">
+        {/* ═══ Header ═══ */}
+        <header className="rc-head">
+          <div className="rc-head-left">
+            <div className="rc-brand">BÁO GARDEN</div>
+            <div className="rc-greet">{greeting}, {user.name}</div>
+          </div>
+          <div className="rc-head-right">
+            <div className="rc-date">
+              {now.toLocaleDateString('vi-VN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
             </div>
-            <div className="rc-header-actions">
-              <button onClick={fetchBookings} className="rc-btn rc-btn-ghost" id="refresh-reception">
-                Tải lại
-              </button>
-              <button onClick={handleLogout} className="rc-btn rc-btn-ghost" id="logout-reception">
-                Đăng xuất
-              </button>
+            <div className="rc-head-btns">
+              <button className="rc-icon-btn" onClick={fetchBookings} title="Tải lại">↻</button>
+              <button className="rc-icon-btn rc-icon-out" onClick={handleLogout} title="Đăng xuất">⏻</button>
             </div>
           </div>
         </header>
 
-        <div className="rc-content">
-          {/* Quick Stats */}
-          <div className="rc-stats">
-            <div className="rc-stat-item rc-stat-default">
-              <div className="rc-stat-value">{stats.total}</div>
-              <div className="rc-stat-label">Tổng</div>
-            </div>
-            <div className="rc-stat-item rc-stat-pending">
-              <div className="rc-stat-value rc-stat-value-pending">{stats.pending}</div>
-              <div className="rc-stat-label">Chờ XN</div>
-            </div>
-            <div className="rc-stat-item rc-stat-confirmed">
-              <div className="rc-stat-value rc-stat-value-confirmed">{stats.confirmed}</div>
-              <div className="rc-stat-label">Đã XN</div>
-            </div>
-            <div className="rc-stat-item rc-stat-arrived">
-              <div className="rc-stat-value rc-stat-value-arrived">{stats.arrived}</div>
-              <div className="rc-stat-label">Đã đến</div>
-            </div>
+        {/* ═══ Stats Strip ═══ */}
+        <div className="rc-strip">
+          <div className="rc-strip-item">
+            <span className="rc-strip-num">{bookings.length}</span>
+            <span className="rc-strip-lab">Tổng</span>
           </div>
-
-          {/* Filter */}
-          <div className="rc-tabs">
-            {[
-              { key: 'all', label: `Tất cả (${bookings.length})` },
-              { key: 'PENDING', label: `Chờ XN (${stats.pending})` },
-              { key: 'CONFIRMED', label: `Đã XN (${stats.confirmed})` },
-              { key: 'ARRIVED', label: `Đã đến (${stats.arrived})` },
-              { key: 'CANCELLED', label: 'Hủy' },
-              { key: 'NO_SHOW', label: 'Không đến' },
-            ].map(tab => (
-              <button key={tab.key} className={`rc-tab ${filter === tab.key ? 'rc-tab-active' : ''}`}
-                onClick={() => setFilter(tab.key)}>
-                {tab.label}
-              </button>
-            ))}
+          <div className="rc-strip-sep" />
+          <div className="rc-strip-item" data-type="pending">
+            <span className="rc-strip-num">{pending}</span>
+            <span className="rc-strip-lab">Chờ XN</span>
           </div>
+          <div className="rc-strip-sep" />
+          <div className="rc-strip-item" data-type="confirmed">
+            <span className="rc-strip-num">{confirmed}</span>
+            <span className="rc-strip-lab">Đã XN</span>
+          </div>
+          <div className="rc-strip-sep" />
+          <div className="rc-strip-item" data-type="arrived">
+            <span className="rc-strip-num">{arrived}</span>
+            <span className="rc-strip-lab">Đã đến</span>
+          </div>
+          <div className="rc-strip-sep" />
+          <div className="rc-strip-item">
+            <span className="rc-strip-num">{totalGuests}</span>
+            <span className="rc-strip-lab">Khách</span>
+          </div>
+        </div>
 
-          {/* Bookings by Time Group */}
+        {/* ═══ Filter Tabs ═══ */}
+        <div className="rc-filters">
+          {[
+            { key: 'all', label: 'Tất cả' },
+            { key: 'PENDING', label: 'Chờ XN' },
+            { key: 'CONFIRMED', label: 'Đã XN' },
+            { key: 'ARRIVED', label: 'Đã đến' },
+            { key: 'COMPLETED', label: 'Hoàn tất' },
+            { key: 'CANCELLED', label: 'Đã hủy' },
+          ].map(f => (
+            <button key={f.key} className={`rc-ftab ${filter === f.key ? 'rc-ftab-on' : ''}`}
+              onClick={() => setFilter(f.key)}>
+              {f.label}
+            </button>
+          ))}
+        </div>
+
+        {/* ═══ Booking List ═══ */}
+        <div className="rc-body">
           {loading ? (
-            <div className="rc-loading-content"><div className="rc-spinner" /></div>
-          ) : filteredBookings.length === 0 ? (
-            <div className="empty-state"><div className="empty-icon">📋</div><h3>Không có booking</h3></div>
-          ) : (
-            <div className="rc-groups">
-              {TIME_GROUPS.map(group => {
-                const groupBookings = filteredBookings.filter(b => group.times.includes(b.bookingTime));
-                if (groupBookings.length === 0) return null;
-                return (
-                  <div key={group.label} className="rc-group">
-                    <div className="rc-group-header">
-                      <h3 className="rc-group-title">{group.label}</h3>
-                      <span className="badge badge-gold rc-group-count">{groupBookings.length}</span>
-                    </div>
-                    <div className="rc-group-list">
-                      {groupBookings.sort((a, b) => a.bookingTime.localeCompare(b.bookingTime)).map(booking => (
-                        <div key={booking.id} className="rc-booking-card"
-                          style={{ borderLeftColor: STATUS_MAP[booking.status]?.color || '#6b7280' }}>
-                          <div className="rc-booking-main">
-                            <div className="rc-booking-info">
-                              <div className="rc-booking-meta">
-                                <span className="rc-booking-code">{booking.bookingCode}</span>
-                                <span className={`badge ${STATUS_MAP[booking.status]?.badge || 'badge-gray'} rc-badge-sm`}>
-                                  {STATUS_MAP[booking.status]?.label || booking.status}
-                                </span>
-                                <span className="rc-booking-time">{booking.bookingTime}</span>
-                              </div>
-                              <div className="rc-booking-customer">
-                                <span className="rc-customer-name">
-                                  {booking.customer.name}
-                                </span>
-                                <span className="rc-customer-phone">
-                                  {booking.customer.phone}
-                                </span>
-                              </div>
-                              <div className="rc-booking-details">
-                                <span>Bàn <strong className="rc-table-code">{booking.table.code}</strong></span>
-                                <span>{booking.guestCount} khách</span>
-                                {booking.note && <span className="rc-note">{booking.note}</span>}
-                              </div>
-                            </div>
-
-                            {/* Actions */}
-                            <div className="rc-booking-actions">
-                              {booking.status === 'PENDING' && (
-                                <button onClick={() => updateStatus(booking.id, 'CONFIRMED')}
-                                  disabled={actionLoading === booking.id}
-                                  className="rc-action-btn rc-action-confirm"
-                                  id={`confirm-${booking.id}`}>
-                                  XN
-                                </button>
-                              )}
-                              {booking.status === 'CONFIRMED' && (
-                                <button onClick={() => updateStatus(booking.id, 'ARRIVED')}
-                                  disabled={actionLoading === booking.id}
-                                  className="rc-action-btn rc-action-checkin"
-                                  id={`checkin-${booking.id}`}>
-                                  Check-in
-                                </button>
-                              )}
-                              {booking.status === 'ARRIVED' && (
-                                <button onClick={() => updateStatus(booking.id, 'COMPLETED')}
-                                  disabled={actionLoading === booking.id}
-                                  className="rc-action-btn rc-action-complete"
-                                  id={`complete-${booking.id}`}>
-                                  Xong
-                                </button>
-                              )}
-                              {!['CANCELLED', 'NO_SHOW', 'COMPLETED'].includes(booking.status) && (
-                                <button onClick={() => updateStatus(booking.id, 'NO_SHOW')}
-                                  disabled={actionLoading === booking.id}
-                                  className="rc-action-btn rc-action-noshow"
-                                  id={`noshow-${booking.id}`}>
-                                  Không đến
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
+            <div className="rc-center"><div className="rc-spin" /></div>
+          ) : filtered.length === 0 ? (
+            <div className="rc-empty">
+              <div className="rc-empty-icon">✦</div>
+              <p>Không có booking nào</p>
             </div>
+          ) : (
+            slots.map(slot => {
+              const items = filtered.filter(b => slot.times.includes(b.bookingTime))
+                .sort((a, b) => a.bookingTime.localeCompare(b.bookingTime));
+              if (items.length === 0) return null;
+              return (
+                <div key={slot.label} className="rc-slot">
+                  <div className="rc-slot-head">
+                    <span className="rc-slot-label">{slot.label}</span>
+                    <span className="rc-slot-range">{slot.range}</span>
+                    <span className="rc-slot-count">{items.length}</span>
+                  </div>
+                  <div className="rc-slot-list">
+                    {items.map(b => {
+                      const s = ST[b.status] || ST.COMPLETED;
+                      const isAction = !['CANCELLED', 'NO_SHOW', 'COMPLETED'].includes(b.status);
+                      return (
+                        <div key={b.id} className="rc-card">
+                          <div className="rc-card-top">
+                            <div className="rc-card-time">{b.bookingTime}</div>
+                            <div className="rc-card-table">{b.table.code}</div>
+                            <div className="rc-card-badge" style={{ color: s.color, background: s.bg }}>{s.label}</div>
+                          </div>
+
+                          <div className="rc-card-mid">
+                            <div className="rc-card-name">{b.customer.name}</div>
+                            <a href={`tel:${b.customer.phone}`} className="rc-card-phone">{b.customer.phone}</a>
+                          </div>
+
+                          <div className="rc-card-bot">
+                            <span className="rc-card-guests">{b.guestCount} khách</span>
+                            {b.table.area?.name && <span className="rc-card-area">{b.table.area.name}</span>}
+                            {b.note && <span className="rc-card-note">{b.note}</span>}
+                          </div>
+
+                          {isAction && (
+                            <div className="rc-card-actions">
+                              {b.status === 'PENDING' && (
+                                <>
+                                  <button className="rc-act rc-act-confirm" disabled={busy === b.id} onClick={() => updateStatus(b.id, 'CONFIRMED')}>Xác nhận</button>
+                                  <button className="rc-act rc-act-cancel" disabled={busy === b.id} onClick={() => updateStatus(b.id, 'CANCELLED')}>Hủy</button>
+                                </>
+                              )}
+                              {b.status === 'CONFIRMED' && (
+                                <>
+                                  <button className="rc-act rc-act-checkin" disabled={busy === b.id} onClick={() => updateStatus(b.id, 'ARRIVED')}>Check-in</button>
+                                  <button className="rc-act rc-act-ghost" disabled={busy === b.id} onClick={() => updateStatus(b.id, 'NO_SHOW')}>Không đến</button>
+                                </>
+                              )}
+                              {b.status === 'ARRIVED' && (
+                                <button className="rc-act rc-act-done" disabled={busy === b.id} onClick={() => updateStatus(b.id, 'COMPLETED')}>Hoàn tất</button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })
           )}
         </div>
 
         {/* Toast */}
         {toast && (
-          <div className="toast-container">
-            <div className={`toast ${toast.type}`}>
-              {toast.type === 'error' ? '✕ ' : toast.type === 'warning' ? '! ' : '✓ '}
-              {toast.message}
-            </div>
+          <div className={`rc-toast ${toast.ok ? '' : 'rc-toast-err'}`}>
+            <span>{toast.ok ? '✓' : '✕'}</span> {toast.msg}
           </div>
         )}
       </div>
@@ -289,511 +237,122 @@ export default function ReceptionPage() {
   );
 }
 
-const rcStyles = `
-  /* ─── Reception Page ─── */
-  .rc-page {
-    min-height: 100dvh;
-    background: var(--bg-primary);
-  }
-
-  .rc-loading {
-    min-height: 100dvh;
-    background: var(--bg-primary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .rc-spinner {
-    width: 32px;
-    height: 32px;
-    border: 2px solid var(--gold-400);
-    border-top-color: transparent;
-    border-radius: 50%;
-    animation: rcSpin 0.8s linear infinite;
-  }
-
-  @keyframes rcSpin {
-    to { transform: rotate(360deg); }
-  }
-
-  /* ─── Header ─── */
-  .rc-header {
-    position: sticky;
-    top: 0;
-    z-index: 50;
-    background: rgba(17, 17, 24, 0.95);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border-bottom: 1px solid var(--border-subtle);
-    padding: var(--space-md) var(--space-lg);
-  }
-
-  .rc-header-inner {
-    max-width: 56rem;
-    margin: 0 auto;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-md);
-  }
-
-  .rc-header-title {
-    font-size: 1.15rem;
-    font-weight: 700;
-    color: var(--text-primary);
-    margin: 0;
-    line-height: 1.3;
-  }
-
-  .rc-header-sub {
-    font-size: 0.75rem;
-    color: var(--text-tertiary);
-    margin: 2px 0 0;
-    line-height: 1.3;
-  }
-
-  .rc-header-actions {
-    display: flex;
-    align-items: center;
-    gap: var(--space-sm);
-    flex-shrink: 0;
-  }
-
-  /* ─── Buttons ─── */
-  .rc-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    padding: var(--space-sm) var(--space-md);
-    border-radius: var(--radius-md);
-    font-weight: 600;
-    font-size: 0.8rem;
-    white-space: nowrap;
-    transition: all var(--transition-fast);
-    min-height: 36px;
-    border: none;
-    cursor: pointer;
-  }
-
-  .rc-btn-ghost {
-    background: transparent;
-    color: var(--text-secondary);
-  }
-
-  .rc-btn-ghost:hover {
-    background: var(--bg-tertiary);
-    color: var(--text-primary);
-  }
-
-  /* ─── Content ─── */
-  .rc-content {
-    max-width: 56rem;
-    margin: 0 auto;
-    padding: var(--space-lg);
-  }
-
-  /* ─── Stats ─── */
-  .rc-stats {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: var(--space-sm);
-    margin-bottom: var(--space-lg);
-  }
-
-  .rc-stat-item {
-    text-align: center;
-    padding: var(--space-md);
-    border-radius: var(--radius-lg);
-    border: 1px solid var(--border-subtle);
-  }
-
-  .rc-stat-default {
-    background: var(--bg-card);
-  }
-
-  .rc-stat-pending {
-    background: rgba(245, 158, 11, 0.08);
-    border-color: rgba(245, 158, 11, 0.15);
-  }
-
-  .rc-stat-confirmed {
-    background: rgba(59, 130, 246, 0.08);
-    border-color: rgba(59, 130, 246, 0.15);
-  }
-
-  .rc-stat-arrived {
-    background: rgba(74, 222, 128, 0.08);
-    border-color: rgba(74, 222, 128, 0.15);
-  }
-
-  .rc-stat-value {
-    font-size: 1.6rem;
-    font-weight: 700;
-    color: var(--text-primary);
-    line-height: 1.2;
-  }
-
-  .rc-stat-value-pending { color: #f59e0b; }
-  .rc-stat-value-confirmed { color: #3b82f6; }
-  .rc-stat-value-arrived { color: #4ade80; }
-
-  .rc-stat-label {
-    font-size: 0.7rem;
-    color: var(--text-tertiary);
-    margin-top: 2px;
-  }
-
-  /* ─── Tabs ─── */
-  .rc-tabs {
-    display: flex;
-    gap: 2px;
-    background: var(--bg-tertiary);
-    border-radius: var(--radius-md);
-    padding: 3px;
-    overflow-x: auto;
-    margin-bottom: var(--space-lg);
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-  }
-
-  .rc-tabs::-webkit-scrollbar {
-    display: none;
-  }
-
-  .rc-tab {
-    padding: 10px 14px;
-    border-radius: var(--radius-sm);
-    font-size: 0.82rem;
-    font-weight: 500;
-    color: var(--text-tertiary);
-    transition: all var(--transition-fast);
-    white-space: nowrap;
-    min-height: 44px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border: none;
-    background: transparent;
-    cursor: pointer;
-  }
-
-  .rc-tab:hover {
-    color: var(--text-secondary);
-  }
-
-  .rc-tab-active {
-    background: var(--bg-card);
-    color: var(--text-primary);
-    box-shadow: var(--shadow-sm);
-  }
-
-  /* ─── Loading Content ─── */
-  .rc-loading-content {
-    display: flex;
-    justify-content: center;
-    padding: var(--space-3xl) 0;
-  }
-
-  /* ─── Time Groups ─── */
-  .rc-groups {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-xl);
-  }
-
-  .rc-group-header {
-    display: flex;
-    align-items: center;
-    gap: var(--space-sm);
-    margin-bottom: var(--space-sm);
-  }
-
-  .rc-group-title {
-    font-size: 0.88rem;
-    font-weight: 700;
-    color: var(--text-secondary);
-    margin: 0;
-  }
-
-  .rc-group-count {
-    font-size: 0.72rem;
-  }
-
-  .rc-group-list {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-sm);
-  }
-
-  /* ─── Booking Card ─── */
-  .rc-booking-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-lg);
-    padding: var(--space-lg);
-    transition: all var(--transition-base);
-    border-left-width: 3px;
-    border-left-style: solid;
-  }
-
-  .rc-booking-card:hover {
-    border-color: var(--border-default);
-    border-left-color: inherit;
-  }
-
-  .rc-booking-main {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: var(--space-md);
-  }
-
-  .rc-booking-info {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .rc-booking-meta {
-    display: flex;
-    align-items: center;
-    gap: var(--space-sm);
-    margin-bottom: var(--space-xs);
-    flex-wrap: wrap;
-  }
-
-  .rc-booking-code {
-    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
-    font-size: 0.75rem;
-    color: var(--gold-400);
-  }
-
-  .rc-badge-sm {
-    font-size: 0.72rem;
-  }
-
-  .rc-booking-time {
-    font-size: 0.88rem;
-    font-weight: 700;
-    color: var(--text-primary);
-  }
-
-  .rc-booking-customer {
-    display: flex;
-    align-items: center;
-    gap: var(--space-md);
-    font-size: 0.88rem;
-  }
-
-  .rc-customer-name {
-    color: var(--text-primary);
-    font-weight: 500;
-  }
-
-  .rc-customer-phone {
-    color: var(--text-secondary);
-  }
-
-  .rc-booking-details {
-    display: flex;
-    align-items: center;
-    gap: var(--space-md);
-    margin-top: var(--space-xs);
-    font-size: 0.78rem;
-    color: var(--text-tertiary);
-  }
-
-  .rc-table-code {
-    color: var(--gold-400);
-  }
-
-  .rc-note {
-    font-style: italic;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    max-width: 150px;
-  }
-
-  /* ─── Action Buttons ─── */
-  .rc-booking-actions {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-xs);
-    flex-shrink: 0;
-  }
-
-  .rc-action-btn {
-    padding: 6px 12px;
-    border-radius: var(--radius-sm);
-    font-size: 0.78rem;
-    font-weight: 600;
-    white-space: nowrap;
-    transition: all var(--transition-fast);
-    min-height: 32px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid transparent;
-    cursor: pointer;
-  }
-
-  .rc-action-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  .rc-action-confirm {
-    background: rgba(59, 130, 246, 0.15);
-    color: #3b82f6;
-    border-color: rgba(59, 130, 246, 0.2);
-  }
-  .rc-action-confirm:hover:not(:disabled) {
-    background: rgba(59, 130, 246, 0.25);
-  }
-
-  .rc-action-checkin {
-    background: rgba(74, 222, 128, 0.15);
-    color: #4ade80;
-    border-color: rgba(74, 222, 128, 0.2);
-  }
-  .rc-action-checkin:hover:not(:disabled) {
-    background: rgba(74, 222, 128, 0.25);
-  }
-
-  .rc-action-complete {
-    background: rgba(139, 92, 246, 0.15);
-    color: #8b5cf6;
-    border-color: rgba(139, 92, 246, 0.2);
-  }
-  .rc-action-complete:hover:not(:disabled) {
-    background: rgba(139, 92, 246, 0.25);
-  }
-
-  .rc-action-noshow {
-    background: transparent;
-    color: var(--text-secondary);
-  }
-  .rc-action-noshow:hover:not(:disabled) {
-    background: var(--bg-tertiary);
-    color: var(--text-primary);
-  }
-
-  /* ─── Mobile Responsive ≤640px ─── */
-  @media (max-width: 640px) {
-    .rc-header {
-      padding: var(--space-sm) var(--space-md);
-    }
-
-    .rc-header-inner {
-      flex-wrap: wrap;
-    }
-
-    .rc-header-title {
-      font-size: 1.05rem;
-    }
-
-    .rc-header-sub {
-      font-size: 0.7rem;
-    }
-
-    .rc-content {
-      padding: var(--space-md);
-    }
-
-    .rc-stats {
-      grid-template-columns: repeat(2, 1fr);
-      gap: var(--space-sm);
-    }
-
-    .rc-stat-value {
-      font-size: 1.4rem;
-    }
-
-    .rc-tab {
-      padding: 8px 12px;
-      font-size: 0.78rem;
-    }
-
-    /* Card layout for bookings on mobile */
-    .rc-booking-card {
-      padding: var(--space-md);
-    }
-
-    .rc-booking-main {
-      flex-direction: column;
-      gap: var(--space-md);
-    }
-
-    .rc-booking-meta {
-      gap: 6px;
-    }
-
-    .rc-booking-customer {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 2px;
-    }
-
-    .rc-booking-details {
-      flex-wrap: wrap;
-      gap: var(--space-sm);
-    }
-
-    .rc-note {
-      max-width: 100%;
-    }
-
-    /* Actions go horizontal on mobile */
-    .rc-booking-actions {
-      flex-direction: row;
-      flex-wrap: wrap;
-      gap: var(--space-sm);
-      width: 100%;
-      border-top: 1px solid var(--border-subtle);
-      padding-top: var(--space-md);
-    }
-
-    .rc-action-btn {
-      min-height: 44px;
-      padding: 10px 16px;
-      font-size: 0.82rem;
-      flex: 1;
-      min-width: 80px;
-    }
-
-    /* Header actions */
-    .rc-btn {
-      min-height: 44px;
-      padding: 10px 14px;
-    }
-  }
-
-  /* ─── Small mobile ≤375px ─── */
-  @media (max-width: 375px) {
-    .rc-stats {
-      gap: 6px;
-    }
-
-    .rc-stat-item {
-      padding: var(--space-sm);
-    }
-
-    .rc-stat-value {
-      font-size: 1.2rem;
-    }
-
-    .rc-stat-label {
-      font-size: 0.65rem;
-    }
-
-    .rc-booking-code {
-      font-size: 0.7rem;
-    }
-
-    .rc-booking-time {
-      font-size: 0.82rem;
-    }
-  }
+const CSS = `
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
+
+.rc{min-height:100dvh;background:#08080c;color:#e8e6e3;font-family:'Inter',-apple-system,sans-serif;display:flex;flex-direction:column}
+
+/* Spinner */
+.rc-spin{width:24px;height:24px;border:2px solid rgba(212,168,74,0.3);border-top-color:#D4A84A;border-radius:50%;animation:rspin .7s linear infinite;margin:auto}
+@keyframes rspin{to{transform:rotate(360deg)}}
+.rc-center{display:flex;justify-content:center;padding:80px 0}
+
+/* ═══ Header ═══ */
+.rc-head{display:flex;justify-content:space-between;align-items:center;padding:20px 28px;border-bottom:1px solid rgba(255,255,255,0.04)}
+.rc-head-left{display:flex;flex-direction:column;gap:2px}
+.rc-brand{font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:#D4A84A;letter-spacing:0.04em}
+.rc-greet{font-size:.72rem;color:rgba(255,255,255,0.35);font-weight:400}
+.rc-head-right{display:flex;align-items:center;gap:14px}
+.rc-date{font-size:.72rem;color:rgba(255,255,255,0.3);text-align:right}
+.rc-head-btns{display:flex;gap:6px}
+.rc-icon-btn{width:34px;height:34px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:rgba(255,255,255,0.4);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.rc-icon-btn:hover{border-color:rgba(212,168,74,0.3);color:#D4A84A}
+.rc-icon-out:hover{border-color:rgba(239,68,68,0.3);color:#ef4444}
+
+/* ═══ Stats Strip ═══ */
+.rc-strip{display:flex;align-items:center;justify-content:center;gap:0;padding:16px 28px;border-bottom:1px solid rgba(255,255,255,0.04);background:rgba(255,255,255,0.01)}
+.rc-strip-item{display:flex;flex-direction:column;align-items:center;gap:1px;padding:0 20px}
+.rc-strip-num{font-size:1.4rem;font-weight:700;color:#fff;line-height:1.1}
+.rc-strip-lab{font-size:.6rem;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,0.3);font-weight:500}
+.rc-strip-item[data-type="pending"] .rc-strip-num{color:#D4A84A}
+.rc-strip-item[data-type="confirmed"] .rc-strip-num{color:#60a5fa}
+.rc-strip-item[data-type="arrived"] .rc-strip-num{color:#4ade80}
+.rc-strip-sep{width:1px;height:28px;background:rgba(255,255,255,0.06)}
+
+/* ═══ Filter Tabs ═══ */
+.rc-filters{display:flex;gap:4px;padding:14px 28px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.rc-filters::-webkit-scrollbar{display:none}
+.rc-ftab{padding:7px 16px;border-radius:100px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:rgba(255,255,255,0.35);font-size:.72rem;font-weight:500;cursor:pointer;transition:all .2s;white-space:nowrap;font-family:inherit}
+.rc-ftab:hover{border-color:rgba(255,255,255,0.12);color:rgba(255,255,255,0.6)}
+.rc-ftab-on{background:rgba(212,168,74,0.08);border-color:rgba(212,168,74,0.25);color:#D4A84A}
+
+/* ═══ Body ═══ */
+.rc-body{flex:1;padding:20px 28px;max-width:720px;margin:0 auto;width:100%}
+.rc-empty{text-align:center;padding:60px 20px;color:rgba(255,255,255,0.2)}
+.rc-empty-icon{font-size:24px;margin-bottom:8px;color:rgba(212,168,74,0.3)}
+.rc-empty p{margin:0;font-size:.82rem}
+
+/* ═══ Time Slot ═══ */
+.rc-slot{margin-bottom:28px}
+.rc-slot-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.rc-slot-label{font-size:.78rem;font-weight:600;color:rgba(255,255,255,0.5)}
+.rc-slot-range{font-size:.65rem;color:rgba(255,255,255,0.2)}
+.rc-slot-count{margin-left:auto;font-size:.6rem;font-weight:600;color:rgba(212,168,74,0.5);background:rgba(212,168,74,0.06);padding:2px 8px;border-radius:100px}
+.rc-slot-list{display:flex;flex-direction:column;gap:6px}
+
+/* ═══ Card ═══ */
+.rc-card{padding:16px 18px;border-radius:12px;border:1px solid rgba(255,255,255,0.05);background:rgba(255,255,255,0.018);transition:all .2s}
+.rc-card:hover{border-color:rgba(255,255,255,0.08);background:rgba(255,255,255,0.025)}
+
+.rc-card-top{display:flex;align-items:center;gap:10px}
+.rc-card-time{font-size:1.1rem;font-weight:700;color:#fff;min-width:50px;font-variant-numeric:tabular-nums}
+.rc-card-table{font-size:.82rem;font-weight:700;color:#D4A84A;background:rgba(212,168,74,0.08);padding:2px 10px;border-radius:6px}
+.rc-card-badge{font-size:.65rem;font-weight:600;padding:3px 10px;border-radius:100px;margin-left:auto}
+
+.rc-card-mid{display:flex;align-items:center;gap:12px;margin-top:8px}
+.rc-card-name{font-size:.88rem;font-weight:500;color:rgba(255,255,255,0.85)}
+.rc-card-phone{font-size:.78rem;color:rgba(255,255,255,0.3);text-decoration:none;transition:color .2s}
+.rc-card-phone:hover{color:#D4A84A}
+
+.rc-card-bot{display:flex;align-items:center;gap:10px;margin-top:6px;flex-wrap:wrap}
+.rc-card-guests{font-size:.72rem;color:rgba(255,255,255,0.3)}
+.rc-card-area{font-size:.65rem;color:rgba(255,255,255,0.2);padding:1px 8px;border:1px solid rgba(255,255,255,0.06);border-radius:4px}
+.rc-card-note{font-size:.68rem;color:rgba(212,168,74,0.4);font-style:italic;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ═══ Actions ═══ */
+.rc-card-actions{display:flex;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.04)}
+.rc-act{padding:7px 18px;border-radius:8px;font-size:.75rem;font-weight:600;cursor:pointer;transition:all .15s;border:1px solid transparent;font-family:inherit}
+.rc-act:disabled{opacity:.4;cursor:not-allowed}
+
+.rc-act-confirm{background:rgba(96,165,250,0.1);color:#60a5fa;border-color:rgba(96,165,250,0.15)}
+.rc-act-confirm:hover:not(:disabled){background:rgba(96,165,250,0.18)}
+
+.rc-act-checkin{background:rgba(74,222,128,0.1);color:#4ade80;border-color:rgba(74,222,128,0.15)}
+.rc-act-checkin:hover:not(:disabled){background:rgba(74,222,128,0.18)}
+
+.rc-act-done{background:rgba(167,139,250,0.1);color:#a78bfa;border-color:rgba(167,139,250,0.15)}
+.rc-act-done:hover:not(:disabled){background:rgba(167,139,250,0.18)}
+
+.rc-act-cancel{background:transparent;color:rgba(255,255,255,0.25);border-color:rgba(255,255,255,0.06)}
+.rc-act-cancel:hover:not(:disabled){color:#f87171;border-color:rgba(248,113,113,0.2)}
+
+.rc-act-ghost{background:transparent;color:rgba(255,255,255,0.25);border-color:rgba(255,255,255,0.06)}
+.rc-act-ghost:hover:not(:disabled){color:rgba(255,255,255,0.5);border-color:rgba(255,255,255,0.1)}
+
+/* ═══ Toast ═══ */
+.rc-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);padding:10px 24px;border-radius:10px;background:rgba(74,222,128,0.12);border:1px solid rgba(74,222,128,0.2);color:#4ade80;font-size:.78rem;font-weight:600;z-index:100;animation:rtoast .3s ease;backdrop-filter:blur(12px)}
+.rc-toast-err{background:rgba(248,113,113,0.12);border-color:rgba(248,113,113,0.2);color:#f87171}
+@keyframes rtoast{from{opacity:0;transform:translateX(-50%) translateY(8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+
+/* ═══ Responsive ═══ */
+@media(max-width:640px){
+  .rc-head{padding:14px 18px;flex-wrap:wrap;gap:8px}
+  .rc-date{display:none}
+  .rc-strip{padding:12px 18px;gap:0}
+  .rc-strip-item{padding:0 12px}
+  .rc-strip-num{font-size:1.1rem}
+  .rc-filters{padding:10px 18px}
+  .rc-body{padding:16px 18px}
+  .rc-card{padding:14px 16px}
+  .rc-card-time{font-size:1rem;min-width:44px}
+  .rc-card-name{font-size:.82rem}
+  .rc-card-actions{flex-wrap:wrap}
+  .rc-act{padding:8px 14px;flex:1;min-width:70px;text-align:center;min-height:38px}
+}
+
+@media(max-width:375px){
+  .rc-strip-item{padding:0 8px}
+  .rc-strip-num{font-size:.95rem}
+  .rc-strip-lab{font-size:.55rem}
+}
 `;
