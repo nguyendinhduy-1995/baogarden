@@ -16,12 +16,12 @@ interface Table {
   deposit: number; minSpend: number;
 }
 
-const AREA_ORDER = ['Sảnh chính','Khu Lounge','Khu VIP','Khu Bar'];
+const AREA_ORDER = ['Khu T','Khu A','Khu B','Khu VIP'];
 const AREA_DESC: Record<string,string> = {
-  'Sảnh chính': 'View sân khấu · Năng lượng đỉnh cao',
-  'Khu Lounge': 'Ghế da · Không gian chill',
-  'Khu VIP': 'Phòng riêng · Tiệc đặc biệt',
-  'Khu Bar': 'Ngồi quầy · Cocktail & bia',
+  'Khu T': 'Trung tâm · View sân khấu gần nhất',
+  'Khu A': 'Bên phải · Năng lượng đỉnh cao',
+  'Khu B': 'Bên trái · Lounge & chill',
+  'Khu VIP': 'Phòng VIP · Tiệc đặc biệt',
 };
 
 export default function PublicBookingPage() {
