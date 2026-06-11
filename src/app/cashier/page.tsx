@@ -51,12 +51,22 @@ export default function CashierPage() {
   const [discountInput, setDiscountInput] = useState('');
   const [serviceChargeInput, setServiceChargeInput] = useState('');
   const [toast, setToast] = useState<{ msg: string; type: string } | null>(null);
+  const [clock, setClock] = useState('');
+  const [paySuccess, setPaySuccess] = useState(false);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const showToast = useCallback((msg: string, type = 'success') => {
     if (toastTimer.current) clearTimeout(toastTimer.current);
     setToast({ msg, type });
     toastTimer.current = setTimeout(() => setToast(null), 3000);
+  }, []);
+
+  // Live clock
+  useEffect(() => {
+    const tick = () => setClock(new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+    tick();
+    const iv = setInterval(tick, 1000);
+    return () => clearInterval(iv);
   }, []);
 
   // Auth check
@@ -138,10 +148,15 @@ export default function CashierPage() {
       });
       if (res.ok) {
         const d = await res.json();
-        showToast('Thanh toán thành công!');
-        setShowModal(false);
-        setSelectedBill(null);
-        loadBills();
+        // Success animation
+        setPaySuccess(true);
+        setTimeout(() => {
+          setPaySuccess(false);
+          showToast('Thanh toán thành công!');
+          setShowModal(false);
+          setSelectedBill(null);
+          loadBills();
+        }, 1200);
         // Open print window
         printBill(d.data);
       } else {
@@ -193,9 +208,9 @@ ${paymentData.serviceCharge > 0 ? `<div class="row"><span>Phí dịch vụ:</spa
   };
 
   if (!authChecked || loading) return (
-    <div style={{ minHeight: '100dvh', background: '#0a0a0f', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div className="c-loading-screen">
       <style>{CSS}</style>
-      <div className="cs-loader" />
+      <div className="c-loader" />
     </div>
   );
 
@@ -203,174 +218,205 @@ ${paymentData.serviceCharge > 0 ? `<div class="row"><span>Phí dịch vụ:</spa
   const openBills = bills.filter(b => b.status === 'OPEN');
 
   return (
-    <div className="cs-root">
+    <div className="c-root">
       <style>{CSS}</style>
 
-      {toast && <div className={`cs-toast cs-toast-${toast.type}`}>{toast.msg}</div>}
+      {/* Toast */}
+      {toast && (
+        <div className={`c-toast ${toast.type === 'error' ? 'c-toast--error' : 'c-toast--success'}`}>
+          {toast.msg}
+        </div>
+      )}
 
       {/* Header */}
-      <header className="cs-header">
-        <div className="cs-header-l">
-          <span className="cs-brand">Báo Garden</span>
-          <span className="cs-title">Thu ngân</span>
+      <header className="c-header">
+        <div className="c-header__left">
+          <h1 className="c-header__title">THU NGÂN</h1>
         </div>
-        <div className="cs-header-r">
-          <span className="cs-user-name">{user?.name}</span>
-          <button className="cs-logout" onClick={handleLogout}>Đăng xuất</button>
+        <div className="c-header__center">
+          <span className="c-clock">{clock}</span>
+        </div>
+        <div className="c-header__right">
+          {paymentRequestedBills.length > 0 && (
+            <span className="c-header__pending">
+              {paymentRequestedBills.length} chờ
+            </span>
+          )}
+          <span className="c-header__user">{user?.name}</span>
+          <button className="c-header__logout" onClick={handleLogout}>Đăng xuất</button>
         </div>
       </header>
 
       {/* Stats */}
-      <div className="cs-stats">
-        <div className="cs-stat">
-          <span className="cs-stat-label">Chờ thanh toán</span>
-          <span className="cs-stat-val" style={{ color: '#a855f7' }}>{paymentRequestedBills.length}</span>
+      <div className="c-stats">
+        <div className="c-stat">
+          <span className="c-stat__label">Chờ thanh toán</span>
+          <span className="c-stat__value c-stat__value--purple">{paymentRequestedBills.length}</span>
         </div>
-        <div className="cs-stat">
-          <span className="cs-stat-label">Bàn đang mở</span>
-          <span className="cs-stat-val" style={{ color: '#3b82f6' }}>{openBills.length}</span>
+        <div className="c-stat">
+          <span className="c-stat__label">Bàn đang mở</span>
+          <span className="c-stat__value c-stat__value--blue">{openBills.length}</span>
         </div>
-        <div className="cs-stat">
-          <span className="cs-stat-label">Tổng bill</span>
-          <span className="cs-stat-val" style={{ color: '#D4A84A' }}>{bills.length}</span>
+        <div className="c-stat">
+          <span className="c-stat__label">Tổng bill</span>
+          <span className="c-stat__value c-stat__value--gold">{bills.length}</span>
         </div>
       </div>
 
-      {/* Bills list */}
-      <div className="cs-body">
+      {/* Bills */}
+      <main className="c-body">
         {paymentRequestedBills.length > 0 && (
-          <div className="cs-section">
-            <h3 className="cs-sec-title">Yêu cầu thanh toán</h3>
-            <div className="cs-bill-list">
+          <section className="c-section">
+            <h3 className="c-section__title">Yêu cầu thanh toán</h3>
+            <div className="c-grid">
               {paymentRequestedBills.map(b => (
-                <button key={b.id} className="cs-bill-card cs-bill-urgent" onClick={() => openBill(b.id)}>
-                  <div className="cs-bill-top">
-                    <span className="cs-bill-code">{b.table.code}</span>
-                    <span className="cs-bill-area">{b.table.area.name}</span>
-                    <span className="cs-bill-badge cs-bill-badge-purple">Chờ TT</span>
+                <button key={b.id} className="c-bill c-bill--urgent" onClick={() => openBill(b.id)}>
+                  <div className="c-bill__top">
+                    <span className="c-bill__code">{b.table.code}</span>
+                    <span className="c-bill__badge c-bill__badge--purple">Chờ TT</span>
                   </div>
-                  <div className="cs-bill-bottom">
-                    <span className="cs-bill-info">{b.orderCount} đơn · {b.itemCount} món</span>
-                    <span className="cs-bill-total">{fmtMoney(b.subtotal)}</span>
+                  <span className="c-bill__area">{b.table.area.name}</span>
+                  <div className="c-bill__bottom">
+                    <span className="c-bill__info">{b.orderCount} đơn · {b.itemCount} món</span>
+                    <span className="c-bill__total">{fmtMoney(b.subtotal)}</span>
                   </div>
+                  <span className="c-bill__time">Mở lúc {fmtTime(b.openedAt)}</span>
                 </button>
               ))}
             </div>
-          </div>
+          </section>
         )}
 
         {openBills.length > 0 && (
-          <div className="cs-section">
-            <h3 className="cs-sec-title">Bàn đang mở</h3>
-            <div className="cs-bill-list">
+          <section className="c-section">
+            <h3 className="c-section__title">Bàn đang mở</h3>
+            <div className="c-grid">
               {openBills.map(b => (
-                <button key={b.id} className="cs-bill-card" onClick={() => openBill(b.id)}>
-                  <div className="cs-bill-top">
-                    <span className="cs-bill-code">{b.table.code}</span>
-                    <span className="cs-bill-area">{b.table.area.name}</span>
-                    <span className="cs-bill-badge cs-bill-badge-blue">Đang phục vụ</span>
+                <button key={b.id} className="c-bill" onClick={() => openBill(b.id)}>
+                  <div className="c-bill__top">
+                    <span className="c-bill__code">{b.table.code}</span>
+                    <span className="c-bill__badge c-bill__badge--blue">Đang phục vụ</span>
                   </div>
-                  <div className="cs-bill-bottom">
-                    <span className="cs-bill-info">{b.orderCount} đơn · {b.itemCount} món</span>
-                    <span className="cs-bill-total">{fmtMoney(b.subtotal)}</span>
+                  <span className="c-bill__area">{b.table.area.name}</span>
+                  <div className="c-bill__bottom">
+                    <span className="c-bill__info">{b.orderCount} đơn · {b.itemCount} món</span>
+                    <span className="c-bill__total">{fmtMoney(b.subtotal)}</span>
                   </div>
+                  <span className="c-bill__time">Mở lúc {fmtTime(b.openedAt)}</span>
                 </button>
               ))}
             </div>
-          </div>
+          </section>
         )}
 
         {bills.length === 0 && (
-          <div className="cs-empty">
-            <p>Chưa có hóa đơn</p>
-            <span>Các bàn có đơn hàng sẽ hiển thị tại đây</span>
+          <div className="c-empty">
+            <p className="c-empty__title">Chưa có hóa đơn</p>
+            <span className="c-empty__sub">Các bàn có đơn hàng sẽ hiển thị tại đây</span>
           </div>
         )}
-      </div>
+      </main>
 
       {/* Bill detail modal */}
       {showModal && selectedBill && (
-        <div className="cs-modal-overlay" onClick={e => e.target === e.currentTarget && setShowModal(false)}>
-          <div className="cs-modal">
-            <div className="cs-modal-header">
-              <div>
-                <h2 className="cs-modal-title">
+        <div className="c-overlay" onClick={e => e.target === e.currentTarget && setShowModal(false)}>
+          <div className={`c-modal ${paySuccess ? 'c-modal--success' : ''}`}>
+            {/* Success animation overlay */}
+            {paySuccess && (
+              <div className="c-success-overlay">
+                <div className="c-success-check">✓</div>
+                <span className="c-success-text">Thanh toán thành công</span>
+              </div>
+            )}
+
+            {/* Modal header */}
+            <div className="c-modal__header">
+              <div className="c-modal__header-info">
+                <h2 className="c-modal__title">
                   Hóa đơn — {selectedBill.table.code}
                 </h2>
-                <p className="cs-modal-sub">{selectedBill.table.name} · {selectedBill.table.area.name}</p>
+                <p className="c-modal__sub">{selectedBill.table.name} · {selectedBill.table.area.name}</p>
               </div>
-              <button className="cs-modal-close" onClick={() => setShowModal(false)}>✕</button>
+              <div className="c-modal__header-actions">
+                <button className="c-modal__close" onClick={() => setShowModal(false)}>✕</button>
+              </div>
             </div>
 
-            <div className="cs-modal-body">
+            {/* Modal body */}
+            <div className="c-modal__body">
               {/* Orders */}
               {selectedBill.orders.map(order => (
-                <div key={order.id} className="cs-order-group">
-                  <div className="cs-order-head">
-                    <span className="cs-order-code">{order.orderCode}</span>
-                    <span className="cs-order-time">{fmtTime(order.createdAt)}</span>
-                    {order.createdBy && <span className="cs-order-by">{order.createdBy.name}</span>}
+                <div key={order.id} className="c-order-group">
+                  <div className="c-order-group__head">
+                    <span className="c-order-group__code">{order.orderCode}</span>
+                    <span className="c-order-group__time">{fmtTime(order.createdAt)}</span>
+                    {order.createdBy && <span className="c-order-group__by">{order.createdBy.name}</span>}
                   </div>
                   {order.items.map(item => (
-                    <div key={item.id} className="cs-item-row">
-                      <span className="cs-item-name">{item.quantity}x {item.itemNameSnapshot}</span>
-                      <span className="cs-item-price">{fmtMoney(Number(item.totalPrice))}</span>
+                    <div key={item.id} className="c-item-row">
+                      <span className="c-item-row__name">{item.quantity}x {item.itemNameSnapshot}</span>
+                      <span className="c-item-row__price">{fmtMoney(Number(item.totalPrice))}</span>
                     </div>
                   ))}
                 </div>
               ))}
 
               {/* Totals */}
-              <div className="cs-totals">
-                <div className="cs-total-row">
+              <div className="c-totals">
+                <div className="c-totals__row">
                   <span>Tạm tính</span>
-                  <span className="cs-total-val">{fmtMoney(selectedBill.subtotal)}</span>
+                  <span className="c-totals__val">{fmtMoney(selectedBill.subtotal)}</span>
                 </div>
 
                 {/* Discount */}
-                <div className="cs-discount-row">
-                  <span className="cs-discount-label">Giảm giá</span>
-                  <div className="cs-discount-input-group">
-                    <select className="cs-select" value={discountType} onChange={e => setDiscountType(e.target.value as 'amount' | 'percent')}>
-                      <option value="amount">VNĐ</option>
-                      <option value="percent">%</option>
-                    </select>
-                    <input className="cs-input cs-input-sm" type="number" placeholder="0" value={discountInput}
+                <div className="c-input-row">
+                  <span className="c-input-row__label">Giảm giá</span>
+                  <div className="c-input-row__group">
+                    <div className="c-toggle-group">
+                      <button
+                        className={`c-toggle ${discountType === 'amount' ? 'c-toggle--active' : ''}`}
+                        onClick={() => setDiscountType('amount')}>VNĐ</button>
+                      <button
+                        className={`c-toggle ${discountType === 'percent' ? 'c-toggle--active' : ''}`}
+                        onClick={() => setDiscountType('percent')}>%</button>
+                    </div>
+                    <input className="c-input" type="number" placeholder="0" value={discountInput}
                       onChange={e => setDiscountInput(e.target.value)} min="0" />
                   </div>
                 </div>
                 {calcDiscount() > 0 && (
-                  <div className="cs-total-row cs-total-discount">
+                  <div className="c-totals__row c-totals__row--discount">
                     <span>Giảm</span>
                     <span>-{fmtMoney(calcDiscount())}</span>
                   </div>
                 )}
 
                 {/* Service charge */}
-                <div className="cs-discount-row">
-                  <span className="cs-discount-label">Phí dịch vụ</span>
-                  <input className="cs-input cs-input-sm" type="number" placeholder="0" value={serviceChargeInput}
+                <div className="c-input-row">
+                  <span className="c-input-row__label">Phí dịch vụ</span>
+                  <input className="c-input" type="number" placeholder="0" value={serviceChargeInput}
                     onChange={e => setServiceChargeInput(e.target.value)} min="0" />
                 </div>
                 {calcServiceCharge() > 0 && (
-                  <div className="cs-total-row">
+                  <div className="c-totals__row">
                     <span>Phí DV</span>
                     <span>+{fmtMoney(calcServiceCharge())}</span>
                   </div>
                 )}
 
-                <div className="cs-total-row cs-total-final">
+                <div className="c-totals__row c-totals__row--final">
                   <span>Tổng cộng</span>
                   <span>{fmtMoney(calcTotal())}</span>
                 </div>
               </div>
 
               {/* Payment method */}
-              <div className="cs-payment-method">
-                <label className="cs-pm-label">Phương thức thanh toán</label>
-                <div className="cs-pm-grid">
+              <div className="c-pay-method">
+                <label className="c-pay-method__label">Phương thức thanh toán</label>
+                <div className="c-pay-method__grid">
                   {PAYMENT_METHODS.map(m => (
-                    <button key={m.value} className={`cs-pm-btn ${paymentMethod === m.value ? 'cs-pm-active' : ''}`}
+                    <button key={m.value}
+                      className={`c-pay-method__btn ${paymentMethod === m.value ? 'c-pay-method__btn--active' : ''}`}
                       onClick={() => setPaymentMethod(m.value)}>
                       {m.label}
                     </button>
@@ -379,9 +425,10 @@ ${paymentData.serviceCharge > 0 ? `<div class="row"><span>Phí dịch vụ:</spa
               </div>
             </div>
 
-            <div className="cs-modal-footer">
-              <button className="cs-cancel-btn" onClick={() => setShowModal(false)}>Hủy</button>
-              <button className="cs-pay-btn" onClick={handlePay} disabled={paying || calcTotal() <= 0}>
+            {/* Modal footer */}
+            <div className="c-modal__footer">
+              <button className="c-modal__cancel" onClick={() => setShowModal(false)}>Hủy</button>
+              <button className="c-modal__pay" onClick={handlePay} disabled={paying || calcTotal() <= 0}>
                 {paying ? 'Đang xử lý...' : `Thanh toán ${fmtMoney(calcTotal())}`}
               </button>
             </div>
@@ -393,122 +440,535 @@ ${paymentData.serviceCharge > 0 ? `<div class="row"><span>Phí dịch vụ:</spa
 }
 
 const CSS = `
-/* ═══ Cashier ═══ */
-.cs-root{min-height:100dvh;background:#0a0a0f;color:#f5f5f7;font-family:'Inter',-apple-system,sans-serif}
-.cs-loader{width:48px;height:2px;background:rgba(255,255,255,0.06);border-radius:1px;overflow:hidden;position:relative}
-.cs-loader::after{content:'';position:absolute;top:0;left:-48px;width:48px;height:100%;background:#D4A84A;animation:cs-slide 1s ease-in-out infinite}
-@keyframes cs-slide{0%{left:-48px}100%{left:48px}}
+/* ═══════════════════════════════════════
+   CASHIER PAGE — Premium Dark Luxury
+   ═══════════════════════════════════════ */
 
-/* Toast */
-.cs-toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:2000;padding:12px 24px;border-radius:12px;font-size:0.85rem;font-weight:600;animation:cs-toastin 0.3s ease;box-shadow:0 8px 30px rgba(0,0,0,0.5);max-width:90vw;text-align:center}
-.cs-toast-success{background:#14532d;color:#4ade80;border:1px solid rgba(74,222,128,0.2)}
-.cs-toast-error{background:#450a0a;color:#f87171;border:1px solid rgba(239,68,68,0.2)}
-@keyframes cs-toastin{from{opacity:0;transform:translateX(-50%) translateY(-12px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
-
-/* Header */
-.cs-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.06);background:#111118;position:sticky;top:0;z-index:100}
-.cs-header-l{display:flex;align-items:center;gap:12px}
-.cs-brand{font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:#D4A84A}
-.cs-title{font-size:0.78rem;color:#71717a;font-weight:500;text-transform:uppercase;letter-spacing:0.04em}
-.cs-header-r{display:flex;align-items:center;gap:10px}
-.cs-user-name{font-size:0.78rem;color:#a1a1aa;font-weight:600}
-.cs-logout{padding:8px 14px;border-radius:8px;font-size:0.78rem;font-weight:600;background:rgba(239,68,68,0.1);color:#f87171;border:1px solid rgba(239,68,68,0.15);cursor:pointer;font-family:inherit;min-height:44px}
-
-/* Stats */
-.cs-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:16px}
-.cs-stat{padding:14px;border-radius:12px;background:#14141e;border:1px solid rgba(255,255,255,0.06)}
-.cs-stat-label{display:block;font-size:0.7rem;color:#71717a;font-weight:500;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:4px}
-.cs-stat-val{font-size:1.3rem;font-weight:800}
-
-/* Body */
-.cs-body{padding:0 16px 24px}
-.cs-section{margin-bottom:20px}
-.cs-sec-title{font-size:0.82rem;font-weight:700;color:#a1a1aa;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:10px}
-
-/* Bill list */
-.cs-bill-list{display:flex;flex-direction:column;gap:8px}
-.cs-bill-card{display:block;width:100%;padding:14px;background:#14141e;border:1px solid rgba(255,255,255,0.06);border-radius:12px;cursor:pointer;text-align:left;color:inherit;font-family:inherit;transition:all 0.15s}
-.cs-bill-card:hover{background:#1c1c2a;border-color:rgba(255,255,255,0.1)}
-.cs-bill-urgent{border-color:rgba(168,85,247,0.2);border-left:3px solid #a855f7}
-.cs-bill-top{display:flex;align-items:center;gap:8px;margin-bottom:8px}
-.cs-bill-code{font-size:1rem;font-weight:800;color:#D4A84A}
-.cs-bill-area{font-size:0.75rem;color:#71717a}
-.cs-bill-badge{font-size:0.68rem;font-weight:700;padding:3px 8px;border-radius:6px;margin-left:auto}
-.cs-bill-badge-purple{background:rgba(168,85,247,0.12);color:#a855f7}
-.cs-bill-badge-blue{background:rgba(59,130,246,0.12);color:#3b82f6}
-.cs-bill-bottom{display:flex;justify-content:space-between;align-items:center}
-.cs-bill-info{font-size:0.78rem;color:#a1a1aa}
-.cs-bill-total{font-size:0.95rem;font-weight:800;color:#f5f5f7}
-
-/* Empty */
-.cs-empty{text-align:center;padding:48px 20px;background:#14141e;border:1px solid rgba(255,255,255,0.06);border-radius:12px}
-.cs-empty p{font-size:0.9rem;font-weight:600;color:#a1a1aa;margin-bottom:4px}
-.cs-empty span{font-size:0.78rem;color:#71717a}
-
-/* Modal */
-.cs-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);display:flex;align-items:flex-end;justify-content:center;z-index:1000;padding:0;animation:cs-fadein 0.2s}
-@keyframes cs-fadein{from{opacity:0}to{opacity:1}}
-.cs-modal{background:#1e1e2e;border:1px solid rgba(255,255,255,0.1);border-radius:20px 20px 0 0;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;animation:cs-slideup 0.3s cubic-bezier(0.16,1,0.3,1)}
-@keyframes cs-slideup{from{transform:translateY(100%)}to{transform:translateY(0)}}
-.cs-modal-header{padding:20px 20px 14px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;justify-content:space-between;align-items:flex-start}
-.cs-modal-title{font-size:1.1rem;font-weight:800;color:#f5f5f7}
-.cs-modal-sub{font-size:0.78rem;color:#71717a;margin-top:2px}
-.cs-modal-close{width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,0.04);border:none;color:#71717a;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;min-width:44px;min-height:44px}
-.cs-modal-body{padding:16px 20px}
-
-/* Order groups */
-.cs-order-group{margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,0.04)}
-.cs-order-group:last-of-type{border-bottom:none}
-.cs-order-head{display:flex;align-items:center;gap:8px;margin-bottom:8px}
-.cs-order-code{font-size:0.75rem;font-weight:700;color:#D4A84A}
-.cs-order-time{font-size:0.7rem;color:#71717a}
-.cs-order-by{font-size:0.7rem;color:#a1a1aa;margin-left:auto}
-.cs-item-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0}
-.cs-item-name{font-size:0.82rem;color:#f5f5f7}
-.cs-item-price{font-size:0.82rem;font-weight:700;color:#a1a1aa}
-
-/* Totals */
-.cs-totals{background:rgba(255,255,255,0.02);border-radius:12px;padding:14px;margin-bottom:16px}
-.cs-total-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:0.85rem;color:#a1a1aa}
-.cs-total-val{font-weight:700;color:#f5f5f7}
-.cs-total-discount{color:#ef4444}
-.cs-total-final{padding-top:10px;margin-top:8px;border-top:1px solid rgba(255,255,255,0.06);font-size:1rem;font-weight:800;color:#D4A84A}
-
-/* Discount */
-.cs-discount-row{display:flex;align-items:center;justify-content:space-between;padding:6px 0;gap:8px}
-.cs-discount-label{font-size:0.78rem;color:#a1a1aa;white-space:nowrap}
-.cs-discount-input-group{display:flex;gap:4px;align-items:center}
-.cs-input{padding:8px 12px;border-radius:8px;background:#1a1a24;border:1px solid rgba(255,255,255,0.08);color:#f5f5f7;font-size:0.82rem;font-family:inherit;outline:none;min-height:40px}
-.cs-input:focus{border-color:rgba(212,168,74,0.4)}
-.cs-input-sm{width:100px}
-.cs-select{padding:8px 10px;border-radius:8px;background:#1a1a24;border:1px solid rgba(255,255,255,0.08);color:#f5f5f7;font-size:0.78rem;font-family:inherit;outline:none;appearance:none;cursor:pointer;min-height:40px}
-
-/* Payment method */
-.cs-payment-method{margin-bottom:16px}
-.cs-pm-label{display:block;font-size:0.78rem;font-weight:600;color:#71717a;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:10px}
-.cs-pm-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.cs-pm-btn{padding:12px;border-radius:10px;font-size:0.82rem;font-weight:600;background:#1a1a24;border:1px solid rgba(255,255,255,0.06);color:#a1a1aa;cursor:pointer;font-family:inherit;transition:all 0.15s;min-height:48px}
-.cs-pm-btn:hover{border-color:rgba(212,168,74,0.2);color:#f5f5f7}
-.cs-pm-active{background:rgba(212,168,74,0.08);border-color:rgba(212,168,74,0.3);color:#fbbf24}
-
-/* Modal footer */
-.cs-modal-footer{padding:14px 20px 20px;border-top:1px solid rgba(255,255,255,0.06);display:flex;gap:10px}
-.cs-cancel-btn{flex:0 0 auto;padding:12px 20px;border-radius:10px;font-size:0.85rem;font-weight:600;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:#a1a1aa;cursor:pointer;font-family:inherit;min-height:48px}
-.cs-pay-btn{flex:1;padding:12px 20px;border-radius:10px;font-size:0.85rem;font-weight:700;background:linear-gradient(135deg,#fbbf24,#d97706);color:#0a0a0f;border:none;cursor:pointer;font-family:inherit;min-height:48px}
-.cs-pay-btn:disabled{opacity:0.5;cursor:wait}
-.cs-pay-btn:hover:not(:disabled){opacity:0.9}
-
-/* Desktop */
-@media(min-width:768px){
-  .cs-modal-overlay{align-items:center;padding:24px}
-  .cs-modal{border-radius:20px;max-height:85vh}
-  .cs-body{padding:0 24px 24px}
-  .cs-stats{padding:16px 24px}
-  .cs-header{padding:12px 24px}
-  .cs-bill-list{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+/* ─── Loading ─── */
+.c-loading-screen {
+  min-height: 100dvh;
+  background: #08080d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-@media(min-width:1024px){
-  .cs-body{max-width:900px;margin:0 auto;width:100%}
-  .cs-stats{max-width:900px;margin:0 auto;width:100%}
+.c-loader {
+  width: 56px;
+  height: 2px;
+  background: rgba(255,255,255,0.04);
+  border-radius: 2px;
+  overflow: hidden;
+  position: relative;
+}
+.c-loader::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -56px;
+  width: 56px;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, #22c55e, transparent);
+  animation: c-slide 1.2s ease-in-out infinite;
+}
+@keyframes c-slide { 0% { left: -56px } 100% { left: 56px } }
+
+/* ─── Root ─── */
+.c-root {
+  min-height: 100dvh;
+  background: #08080d;
+  color: #f5f5f7;
+  font-family: 'Inter', -apple-system, sans-serif;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ─── Toast ─── */
+.c-toast {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  padding: 12px 28px;
+  border-radius: 40px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  animation: c-toast-in 0.35s cubic-bezier(0.16,1,0.3,1);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+  max-width: 90vw;
+  text-align: center;
+  backdrop-filter: blur(12px);
+}
+.c-toast--success { background: rgba(20,83,45,0.92); color: #4ade80; border: 1px solid rgba(74,222,128,0.2); }
+.c-toast--error { background: rgba(69,10,10,0.92); color: #f87171; border: 1px solid rgba(239,68,68,0.2); }
+@keyframes c-toast-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(-16px) scale(0.95); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+}
+
+/* ═══ Header ═══ */
+.c-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  height: 56px;
+  background: rgba(17,17,24,0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  position: sticky;
+  top: 0;
+  z-index: 200;
+}
+.c-header__left { display: flex; align-items: center; }
+.c-header__title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: #22c55e;
+}
+.c-header__center { display: flex; align-items: center; }
+.c-clock {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: rgba(255,255,255,0.35);
+  letter-spacing: 0.06em;
+  font-variant-numeric: tabular-nums;
+}
+.c-header__right { display: flex; align-items: center; gap: 10px; }
+.c-header__pending {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #a855f7;
+  background: rgba(168,85,247,0.08);
+  padding: 4px 10px;
+  border-radius: 40px;
+  border: 1px solid rgba(168,85,247,0.12);
+  animation: c-pulse-pending 2s ease-in-out infinite;
+}
+@keyframes c-pulse-pending {
+  0%,100% { box-shadow: 0 0 0 0 rgba(168,85,247,0.3); }
+  50% { box-shadow: 0 0 0 5px rgba(168,85,247,0); }
+}
+.c-header__user {
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.4);
+  font-weight: 500;
+  display: none;
+}
+.c-header__logout {
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: rgba(239,68,68,0.08);
+  color: #f87171;
+  border: 1px solid rgba(239,68,68,0.12);
+  cursor: pointer;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  transition: background 0.15s;
+}
+.c-header__logout:hover { background: rgba(239,68,68,0.15); }
+
+/* ═══ Stats ═══ */
+.c-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 16px;
+}
+.c-stat {
+  padding: 14px;
+  border-radius: 12px;
+  background: rgba(20,20,30,0.6);
+  border: 1px solid rgba(255,255,255,0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.c-stat__label {
+  font-size: 0.62rem;
+  color: rgba(255,255,255,0.3);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.c-stat__value { font-size: 1.4rem; font-weight: 800; }
+.c-stat__value--purple { color: #a855f7; }
+.c-stat__value--blue { color: #3b82f6; }
+.c-stat__value--gold { color: #D4A84A; }
+
+/* ═══ Body ═══ */
+.c-body { padding: 0 16px 32px; flex: 1; }
+.c-section { margin-bottom: 24px; }
+.c-section__title {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.3);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 10px;
+}
+
+/* ═══ Bill grid ═══ */
+.c-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+.c-bill {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  padding: 16px;
+  background: rgba(20,20,30,0.6);
+  border: 1px solid rgba(255,255,255,0.04);
+  border-radius: 14px;
+  cursor: pointer;
+  text-align: left;
+  color: inherit;
+  transition: all 0.15s;
+}
+.c-bill:hover {
+  background: rgba(28,28,42,0.7);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+}
+.c-bill--urgent {
+  border-color: rgba(168,85,247,0.15);
+  animation: c-bill-pulse 2s ease-in-out infinite;
+}
+@keyframes c-bill-pulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(168,85,247,0.15); }
+  50% { box-shadow: 0 0 0 3px rgba(168,85,247,0); }
+}
+.c-bill__top { display: flex; align-items: center; justify-content: space-between; }
+.c-bill__code { font-size: 1.1rem; font-weight: 800; color: #D4A84A; }
+.c-bill__badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 40px;
+}
+.c-bill__badge--purple { background: rgba(168,85,247,0.08); color: #a855f7; }
+.c-bill__badge--blue { background: rgba(59,130,246,0.08); color: #3b82f6; }
+.c-bill__area { font-size: 0.72rem; color: rgba(255,255,255,0.25); }
+.c-bill__bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.c-bill__info { font-size: 0.75rem; color: rgba(255,255,255,0.45); }
+.c-bill__total { font-size: 1rem; font-weight: 800; color: #f5f5f7; }
+.c-bill__time { font-size: 0.68rem; color: rgba(255,255,255,0.2); }
+
+/* ═══ Empty state ═══ */
+.c-empty {
+  text-align: center;
+  padding: 56px 20px;
+  background: rgba(20,20,30,0.4);
+  border: 1px solid rgba(255,255,255,0.03);
+  border-radius: 14px;
+}
+.c-empty__title { font-size: 0.9rem; font-weight: 600; color: rgba(255,255,255,0.4); margin-bottom: 4px; }
+.c-empty__sub { font-size: 0.78rem; color: rgba(255,255,255,0.2); }
+
+/* ═══ Modal overlay ═══ */
+.c-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 1000;
+  padding: 0;
+  animation: c-overlay-in 0.2s ease;
+}
+@keyframes c-overlay-in { from { opacity: 0; } to { opacity: 1; } }
+
+.c-modal {
+  background: #161622;
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 20px 20px 0 0;
+  width: 100%;
+  max-width: 600px;
+  max-height: 92vh;
+  overflow-y: auto;
+  animation: c-modal-up 0.35s cubic-bezier(0.16,1,0.3,1);
+  position: relative;
+}
+.c-modal--success { pointer-events: none; }
+@keyframes c-modal-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+/* ─── Success overlay ─── */
+.c-success-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(22,22,34,0.95);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  border-radius: 20px 20px 0 0;
+  animation: c-success-in 0.4s cubic-bezier(0.16,1,0.3,1);
+}
+@keyframes c-success-in { from { opacity: 0; } to { opacity: 1; } }
+.c-success-check {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(34,197,94,0.1);
+  border: 2px solid #22c55e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  color: #22c55e;
+  font-weight: 700;
+  margin-bottom: 16px;
+  animation: c-check-pop 0.5s cubic-bezier(0.16,1,0.3,1);
+}
+@keyframes c-check-pop {
+  from { transform: scale(0); }
+  to { transform: scale(1); }
+}
+.c-success-text {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #22c55e;
+}
+
+/* ─── Modal header ─── */
+.c-modal__header {
+  padding: 20px 20px 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+.c-modal__header-info { flex: 1; }
+.c-modal__title { font-size: 1.05rem; font-weight: 800; color: #f5f5f7; }
+.c-modal__sub { font-size: 0.75rem; color: rgba(255,255,255,0.3); margin-top: 2px; }
+.c-modal__header-actions { display: flex; gap: 8px; }
+.c-modal__close {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.35);
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+.c-modal__close:hover { color: #f5f5f7; background: rgba(255,255,255,0.06); }
+
+/* ─── Modal body ─── */
+.c-modal__body { padding: 16px 20px; }
+
+/* ─── Order groups ─── */
+.c-order-group {
+  margin-bottom: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+.c-order-group:last-of-type { border-bottom: none; }
+.c-order-group__head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.c-order-group__code { font-size: 0.72rem; font-weight: 700; color: #D4A84A; }
+.c-order-group__time { font-size: 0.68rem; color: rgba(255,255,255,0.25); }
+.c-order-group__by { font-size: 0.68rem; color: rgba(255,255,255,0.4); margin-left: auto; }
+.c-item-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+}
+.c-item-row__name { font-size: 0.82rem; color: #f5f5f7; }
+.c-item-row__price { font-size: 0.82rem; font-weight: 700; color: rgba(255,255,255,0.5); }
+
+/* ─── Totals ─── */
+.c-totals {
+  background: rgba(255,255,255,0.02);
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 16px;
+  border: 1px solid rgba(255,255,255,0.03);
+}
+.c-totals__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.5);
+}
+.c-totals__val { font-weight: 700; color: #f5f5f7; }
+.c-totals__row--discount { color: #ef4444; }
+.c-totals__row--final {
+  padding-top: 12px;
+  margin-top: 8px;
+  border-top: 1px solid rgba(255,255,255,0.04);
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #22c55e;
+}
+
+/* ─── Input rows ─── */
+.c-input-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 0;
+  gap: 8px;
+}
+.c-input-row__label { font-size: 0.78rem; color: rgba(255,255,255,0.45); white-space: nowrap; }
+.c-input-row__group { display: flex; gap: 6px; align-items: center; }
+.c-input {
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(26,26,36,0.8);
+  border: 1px solid rgba(255,255,255,0.06);
+  color: #f5f5f7;
+  font-size: 0.82rem;
+  font-family: inherit;
+  outline: none;
+  min-height: 44px;
+  width: 100px;
+  transition: border-color 0.2s;
+}
+.c-input:focus { border-color: rgba(34,197,94,0.35); }
+
+/* ─── Toggle group (discount type) ─── */
+.c-toggle-group {
+  display: flex;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.c-toggle {
+  padding: 8px 12px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  background: rgba(26,26,36,0.8);
+  color: rgba(255,255,255,0.4);
+  cursor: pointer;
+  border: none;
+  min-height: 44px;
+  transition: all 0.15s;
+}
+.c-toggle--active {
+  background: rgba(34,197,94,0.08);
+  color: #22c55e;
+}
+
+/* ─── Payment method ─── */
+.c-pay-method { margin-bottom: 8px; }
+.c-pay-method__label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.3);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 10px;
+}
+.c-pay-method__grid {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 2px;
+}
+.c-pay-method__grid::-webkit-scrollbar { display: none; }
+.c-pay-method__btn {
+  padding: 12px 18px;
+  border-radius: 40px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  background: rgba(26,26,36,0.8);
+  border: 1px solid rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.4);
+  cursor: pointer;
+  transition: all 0.15s;
+  min-height: 48px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.c-pay-method__btn:hover { border-color: rgba(34,197,94,0.15); color: rgba(255,255,255,0.6); }
+.c-pay-method__btn--active {
+  background: rgba(34,197,94,0.06);
+  border-color: rgba(34,197,94,0.25);
+  color: #22c55e;
+}
+
+/* ─── Modal footer ─── */
+.c-modal__footer {
+  padding: 14px 20px 24px;
+  border-top: 1px solid rgba(255,255,255,0.04);
+  display: flex;
+  gap: 10px;
+}
+.c-modal__cancel {
+  flex: 0 0 auto;
+  padding: 14px 20px;
+  border-radius: 12px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.45);
+  cursor: pointer;
+  min-height: 52px;
+  transition: all 0.15s;
+}
+.c-modal__cancel:hover { background: rgba(255,255,255,0.06); color: #f5f5f7; }
+.c-modal__pay {
+  flex: 1;
+  padding: 14px 20px;
+  border-radius: 12px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: #08080d;
+  border: none;
+  cursor: pointer;
+  min-height: 52px;
+  transition: opacity 0.15s;
+  box-shadow: 0 4px 20px rgba(34,197,94,0.2);
+}
+.c-modal__pay:disabled { opacity: 0.4; cursor: wait; }
+.c-modal__pay:hover:not(:disabled) { opacity: 0.9; }
+
+/* ═══ Responsive ═══ */
+@media (min-width: 768px) {
+  .c-header { padding: 0 24px; }
+  .c-stats { padding: 16px 24px; gap: 12px; }
+  .c-body { padding: 0 24px 32px; }
+  .c-header__user { display: block; }
+  .c-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .c-overlay { align-items: center; padding: 24px; }
+  .c-modal { border-radius: 20px; max-height: 85vh; }
+  .c-success-overlay { border-radius: 20px; }
+}
+
+@media (min-width: 1024px) {
+  .c-body { max-width: 960px; margin: 0 auto; width: 100%; }
+  .c-stats { max-width: 960px; margin: 0 auto; width: 100%; }
+  .c-grid { grid-template-columns: repeat(3, 1fr); }
 }
 `;

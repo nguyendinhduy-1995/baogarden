@@ -14,7 +14,7 @@ interface ServiceReq { id: string; type: string; note: string | null; status: st
 interface CartItem { menuItemId: string; name: string; price: number; quantity: number; note: string; department: string }
 
 const NOTE_CHIPS = ['Ít cay', 'Không hành', 'Thêm đá', 'Không đá', 'Làm trước', 'Mang ra sau'];
-const STATUS_COLORS: Record<string, string> = { AVAILABLE: '#4ade80', OCCUPIED: '#ef4444', RESERVED: '#f59e0b', CLEANING: '#6b7280' };
+const STATUS_COLORS: Record<string, string> = { AVAILABLE: '#22c55e', OCCUPIED: '#ef4444', RESERVED: '#f59e0b', CLEANING: '#6b7280' };
 const ITEM_STATUS_LABELS: Record<string, { label: string; color: string }> = {
   PENDING: { label: 'Chờ', color: '#f59e0b' }, ACCEPTED: { label: 'Đã nhận', color: '#3b82f6' },
   PREPARING: { label: 'Đang làm', color: '#a855f7' }, READY: { label: 'Sẵn sàng', color: '#4ade80' },
@@ -47,12 +47,21 @@ export default function WaiterPage() {
   const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState<{ msg: string; type: string } | null>(null);
   const [serviceReqs, setServiceReqs] = useState<ServiceReq[]>([]);
+  const [clock, setClock] = useState('');
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const showToast = useCallback((msg: string, type = 'success') => {
     if (toastTimer.current) clearTimeout(toastTimer.current);
     setToast({ msg, type });
     toastTimer.current = setTimeout(() => setToast(null), 3000);
+  }, []);
+
+  // Live clock
+  useEffect(() => {
+    const tick = () => setClock(new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+    tick();
+    const iv = setInterval(tick, 1000);
+    return () => clearInterval(iv);
   }, []);
 
   // Auth check
@@ -243,428 +252,1016 @@ export default function WaiterPage() {
   const sessionTotal = session?.orders?.reduce((s, o) => s + o.items.reduce((is, i) => is + Number(i.totalPrice), 0), 0) || 0;
 
   if (!authChecked || loading) return (
-    <div style={{ minHeight: '100dvh', background: '#0a0a0f', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div className="w-loading-screen">
       <style>{CSS}</style>
-      <div className="wt-loader" />
+      <div className="w-loader" />
     </div>
   );
 
   return (
-    <div className="wt-root">
+    <div className="w-root">
       <style>{CSS}</style>
 
       {/* Toast */}
-      {toast && <div className={`wt-toast wt-toast-${toast.type}`}>{toast.msg}</div>}
+      {toast && (
+        <div className={`w-toast ${toast.type === 'error' ? 'w-toast--error' : 'w-toast--success'}`}>
+          {toast.msg}
+        </div>
+      )}
 
       {/* Header */}
-      <header className="wt-header">
-        <div className="wt-header-l">
-          <span className="wt-brand">Báo Garden</span>
-          <span className="wt-role">{user?.name}</span>
+      <header className="w-header">
+        <div className="w-header__left">
+          <h1 className="w-header__title">PHỤC VỤ</h1>
         </div>
-        <div className="wt-header-r">
-          <button className="wt-logout" onClick={handleLogout}>Đăng xuất</button>
+        <div className="w-header__center">
+          <span className="w-clock">{clock}</span>
+        </div>
+        <div className="w-header__right">
+          {serviceReqs.length > 0 && (
+            <button className="w-header__badge" onClick={() => setTab('requests')}>
+              {serviceReqs.length}
+            </button>
+          )}
+          <span className="w-header__user">{user?.name}</span>
+          <button className="w-header__logout" onClick={handleLogout}>Đăng xuất</button>
         </div>
       </header>
 
-      {/* Tabs */}
-      <div className="wt-tabs">
-        <button className={`wt-tab ${tab === 'tables' ? 'wt-tab-active' : ''}`} onClick={() => { setTab('tables'); setSelectedTable(null); setSession(null); }}>
-          Sơ đồ bàn
-        </button>
-        <button className={`wt-tab ${tab === 'orders' ? 'wt-tab-active' : ''}`} onClick={() => setTab('orders')}>
-          Đơn hoạt động
-        </button>
-        <button className={`wt-tab ${tab === 'requests' ? 'wt-tab-active' : ''}`} onClick={() => setTab('requests')}>
-          Yêu cầu
-          {serviceReqs.length > 0 && <span className="wt-badge">{serviceReqs.length}</span>}
-        </button>
-      </div>
+      {/* Tab bar */}
+      <nav className="w-tabbar">
+        <div className="w-tabbar__inner">
+          {(['tables', 'orders', 'requests'] as const).map(t => (
+            <button
+              key={t}
+              className={`w-tabbar__tab ${tab === t ? 'w-tabbar__tab--active' : ''}`}
+              onClick={() => { setTab(t); if (t !== 'tables') { setSelectedTable(null); setSession(null); } }}
+            >
+              {t === 'tables' ? 'Sơ đồ bàn' : t === 'orders' ? 'Đơn hàng' : 'Yêu cầu'}
+              {t === 'requests' && serviceReqs.length > 0 && (
+                <span className="w-tabbar__count">{serviceReqs.length}</span>
+              )}
+            </button>
+          ))}
+        </div>
+      </nav>
 
-      {/* Content */}
-      <div className="wt-body">
-        {/* ── TAB: Tables ── */}
-        {tab === 'tables' && !selectedTable && (
-          <div className="wt-tables-view">
-            {areas.map(area => (
-              <div key={area.id} className="wt-area">
-                <h3 className="wt-area-title">{area.name}</h3>
-                <div className="wt-grid">
-                  {tables.filter(t => t.area.id === area.id).map(t => {
-                    const color = t.sessionStatus === 'PAYMENT_REQUESTED' ? '#a855f7' : STATUS_COLORS[t.status] || '#6b7280';
-                    return (
-                      <button key={t.id} className="wt-table-btn" onClick={() => openTable(t)}
-                        style={{ borderColor: color }}>
-                        <span className="wt-table-dot" style={{ background: color }} />
-                        <span className="wt-table-code">{t.code}</span>
-                        <span className="wt-table-name">{t.name}</span>
-                        {t.sessionStatus === 'PAYMENT_REQUESTED' && <span className="wt-table-tag">Chờ TT</span>}
-                        {t.activeOrderCount > 0 && t.sessionStatus !== 'PAYMENT_REQUESTED' && (
-                          <span className="wt-table-orders">{t.activeOrderCount} đơn</span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* ── Selected Table ── */}
-        {tab === 'tables' && selectedTable && (
-          <div className="wt-order-view">
-            <div className="wt-order-header">
-              <button className="wt-back" onClick={() => { setSelectedTable(null); setSession(null); setShowMenu(false); setCart([]); }}>
-                ← Quay lại
-              </button>
-              <div className="wt-order-table-info">
-                <span className="wt-order-table-code">{selectedTable.code}</span>
-                <span className="wt-order-table-name">{selectedTable.name}</span>
-              </div>
-            </div>
-
-            {sessionLoading ? (
-              <div className="wt-loading-msg">Đang tải...</div>
-            ) : session ? (
-              <>
-                {/* Action buttons */}
-                <div className="wt-actions-row">
-                  <button className="wt-action-btn wt-action-add" onClick={() => setShowMenu(!showMenu)}>
-                    {showMenu ? '✕ Đóng menu' : '+ Thêm món'}
-                  </button>
-                  {session.status === 'OPEN' && session.orders.length > 0 && (
-                    <button className="wt-action-btn wt-action-pay" onClick={requestPayment}>
-                      Yêu cầu thanh toán
-                    </button>
-                  )}
-                </div>
-
-                {/* Menu overlay */}
-                {showMenu && (
-                  <div className="wt-menu-panel">
-                    <input className="wt-menu-search" type="text" placeholder="Tìm món..." value={menuSearch}
-                      onChange={e => setMenuSearch(e.target.value)} />
-                    <div className="wt-menu-cats">
-                      <button className={`wt-cat-btn ${menuCat === 'all' ? 'wt-cat-active' : ''}`} onClick={() => setMenuCat('all')}>Tất cả</button>
-                      {categories.map(c => (
-                        <button key={c.id} className={`wt-cat-btn ${menuCat === c.id ? 'wt-cat-active' : ''}`}
-                          onClick={() => setMenuCat(c.id)}>{c.name}</button>
-                      ))}
-                    </div>
-                    <div className="wt-menu-list">
-                      {filteredMenu.map(item => {
-                        const inCart = cart.find(c => c.menuItemId === item.id);
-                        return (
-                          <div key={item.id} className="wt-menu-item">
-                            <div className="wt-menu-item-info">
-                              <span className="wt-menu-item-name">{item.name}</span>
-                              <span className="wt-menu-item-price">{fmtMoney(Number(item.price))}</span>
-                            </div>
-                            {inCart ? (
-                              <div className="wt-qty-ctrl">
-                                <button className="wt-qty-btn" onClick={() => updateCartQty(item.id, -1)}>−</button>
-                                <span className="wt-qty-val">{inCart.quantity}</span>
-                                <button className="wt-qty-btn" onClick={() => updateCartQty(item.id, 1)}>+</button>
-                              </div>
-                            ) : (
-                              <button className="wt-add-item-btn" onClick={() => addToCart(item)}>+</button>
+      {/* Desktop layout: main + panel */}
+      <div className="w-layout">
+        {/* Main content area */}
+        <main className={`w-main ${selectedTable ? 'w-main--with-panel' : ''}`}>
+          {/* ── TAB: Tables ── */}
+          {tab === 'tables' && !selectedTable && (
+            <div className="w-tables">
+              {areas.map(area => (
+                <section key={area.id} className="w-area">
+                  <h3 className="w-area__title">{area.name}</h3>
+                  <div className="w-grid">
+                    {tables.filter(t => t.area.id === area.id).map(t => {
+                      const isPR = t.sessionStatus === 'PAYMENT_REQUESTED';
+                      const color = isPR ? '#a855f7' : STATUS_COLORS[t.status] || '#6b7280';
+                      return (
+                        <button key={t.id} className={`w-table ${isPR ? 'w-table--pulse' : ''}`} onClick={() => openTable(t)}
+                          style={{ borderLeftColor: color }}>
+                          <div className="w-table__top">
+                            <span className="w-table__code">{t.code}</span>
+                            <span className="w-table__dot" style={{ background: color }} />
+                          </div>
+                          <span className="w-table__name">{t.name}</span>
+                          <div className="w-table__meta">
+                            {isPR && <span className="w-table__tag w-table__tag--purple">Chờ TT</span>}
+                            {t.activeOrderCount > 0 && !isPR && (
+                              <span className="w-table__tag w-table__tag--blue">{t.activeOrderCount} đơn</span>
                             )}
                           </div>
-                        );
-                      })}
-                      {filteredMenu.length === 0 && <div className="wt-empty-msg">Không tìm thấy món</div>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </section>
+              ))}
+            </div>
+          )}
+
+          {/* ── Selected Table (mobile: full-screen) ── */}
+          {tab === 'tables' && selectedTable && (
+            <div className="w-panel-mobile">
+              {renderOrderPanel()}
+            </div>
+          )}
+
+          {/* ── TAB: Active orders ── */}
+          {tab === 'orders' && (
+            <div className="w-orders-list">
+              {tables.filter(t => t.activeOrderCount > 0 || t.sessionStatus).map(t => (
+                <button key={t.id} className="w-order-card" onClick={() => { setTab('tables'); openTable(t); }}>
+                  <div className="w-order-card__left">
+                    <span className="w-order-card__code">{t.code}</span>
+                    <span className="w-order-card__name">{t.name}</span>
+                  </div>
+                  <div className="w-order-card__right">
+                    <span className="w-order-card__count">{t.activeOrderCount} đơn</span>
+                    {t.sessionStatus === 'PAYMENT_REQUESTED' && (
+                      <span className="w-order-card__badge">Chờ TT</span>
+                    )}
+                  </div>
+                </button>
+              ))}
+              {tables.filter(t => t.activeOrderCount > 0 || t.sessionStatus).length === 0 && (
+                <div className="w-empty">Không có đơn hoạt động</div>
+              )}
+            </div>
+          )}
+
+          {/* ── TAB: Service requests ── */}
+          {tab === 'requests' && (
+            <div className="w-reqs">
+              {serviceReqs.length === 0 ? (
+                <div className="w-empty">Không có yêu cầu</div>
+              ) : (
+                serviceReqs.map(r => (
+                  <div key={r.id} className="w-req">
+                    <div className="w-req__header">
+                      <span className="w-req__table">{r.table.code}</span>
+                      <span className="w-req__type">{SERVICE_TYPE_LABELS[r.type] || r.type}</span>
+                      <span className="w-req__time">{fmtTime(r.createdAt)}</span>
                     </div>
+                    {r.note && <p className="w-req__note">{r.note}</p>}
+                    <button className="w-req__resolve" onClick={() => resolveServiceReq(r.id)}>Đã xử lý</button>
                   </div>
-                )}
+                ))
+              )}
+            </div>
+          )}
+        </main>
 
-                {/* Cart */}
-                {cart.length > 0 && (
-                  <div className="wt-cart">
-                    <h4 className="wt-cart-title">Giỏ hàng ({cart.length} món)</h4>
-                    {cart.map(c => (
-                      <div key={c.menuItemId} className="wt-cart-item">
-                        <div className="wt-cart-item-top">
-                          <span className="wt-cart-item-name">{c.name}</span>
-                          <span className="wt-cart-item-total">{fmtMoney(c.price * c.quantity)}</span>
-                        </div>
-                        <div className="wt-cart-item-mid">
-                          <div className="wt-qty-ctrl">
-                            <button className="wt-qty-btn" onClick={() => updateCartQty(c.menuItemId, -1)}>−</button>
-                            <span className="wt-qty-val">{c.quantity}</span>
-                            <button className="wt-qty-btn" onClick={() => updateCartQty(c.menuItemId, 1)}>+</button>
-                          </div>
-                          <button className="wt-cart-remove" onClick={() => removeFromCart(c.menuItemId)}>Xóa</button>
-                        </div>
-                        <div className="wt-note-chips">
-                          {NOTE_CHIPS.map(chip => (
-                            <button key={chip} className={`wt-chip ${c.note?.includes(chip) ? 'wt-chip-active' : ''}`}
-                              onClick={() => toggleNote(c.menuItemId, chip)}>{chip}</button>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                    <div className="wt-cart-footer">
-                      <span className="wt-cart-total">Tổng: {fmtMoney(cartTotal)}</span>
-                      <button className="wt-submit-btn" onClick={submitOrder} disabled={submitting}>
-                        {submitting ? 'Đang gửi...' : 'Gửi đơn'}
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Current orders */}
-                <div className="wt-session-orders">
-                  <h4 className="wt-section-title">
-                    Đơn hàng hiện tại
-                    <span className="wt-section-sub"> — Tổng: {fmtMoney(sessionTotal)}</span>
-                  </h4>
-                  {session.orders.length === 0 ? (
-                    <div className="wt-empty-msg">Chưa có đơn hàng</div>
-                  ) : (
-                    session.orders.map(order => (
-                      <div key={order.id} className="wt-order-card">
-                        <div className="wt-order-card-head">
-                          <span className="wt-order-code">{order.orderCode}</span>
-                          <span className="wt-order-time">{fmtTime(order.createdAt)}</span>
-                        </div>
-                        {order.items.map(item => {
-                          const st = ITEM_STATUS_LABELS[item.status];
-                          return (
-                            <div key={item.id} className="wt-order-item">
-                              <div className="wt-order-item-l">
-                                <span className="wt-order-item-name">
-                                  {item.quantity}x {item.itemNameSnapshot}
-                                </span>
-                                {item.note && <span className="wt-order-item-note">{item.note}</span>}
-                              </div>
-                              <div className="wt-order-item-r">
-                                <span className="wt-order-item-status" style={{ color: st?.color }}>
-                                  {st?.label || item.status}
-                                </span>
-                                {item.status === 'READY' && (
-                                  <button className="wt-serve-btn" onClick={() => markServed(item.id)}>Phục vụ</button>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ))
-                  )}
-                </div>
-              </>
-            ) : null}
-          </div>
-        )}
-
-        {/* ── TAB: Active orders ── */}
-        {tab === 'orders' && (
-          <div className="wt-active-orders">
-            {tables.filter(t => t.activeOrderCount > 0 || t.sessionStatus).map(t => (
-              <button key={t.id} className="wt-active-order-card" onClick={() => { setTab('tables'); openTable(t); }}>
-                <div className="wt-active-order-l">
-                  <span className="wt-active-code">{t.code}</span>
-                  <span className="wt-active-name">{t.name}</span>
-                </div>
-                <div className="wt-active-order-r">
-                  <span className="wt-active-count">{t.activeOrderCount} đơn</span>
-                  {t.sessionStatus === 'PAYMENT_REQUESTED' && <span className="wt-active-pay">Chờ TT</span>}
-                </div>
-              </button>
-            ))}
-            {tables.filter(t => t.activeOrderCount > 0 || t.sessionStatus).length === 0 && (
-              <div className="wt-empty-msg">Không có đơn hoạt động</div>
-            )}
-          </div>
-        )}
-
-        {/* ── TAB: Service requests ── */}
-        {tab === 'requests' && (
-          <div className="wt-requests">
-            {serviceReqs.length === 0 ? (
-              <div className="wt-empty-msg">Không có yêu cầu</div>
-            ) : (
-              serviceReqs.map(r => (
-                <div key={r.id} className="wt-req-card">
-                  <div className="wt-req-top">
-                    <span className="wt-req-table">{r.table.code}</span>
-                    <span className="wt-req-type">{SERVICE_TYPE_LABELS[r.type] || r.type}</span>
-                    <span className="wt-req-time">{fmtTime(r.createdAt)}</span>
-                  </div>
-                  {r.note && <p className="wt-req-note">{r.note}</p>}
-                  <button className="wt-req-done" onClick={() => resolveServiceReq(r.id)}>Đã xử lý</button>
-                </div>
-              ))
-            )}
-          </div>
+        {/* Desktop slide-in panel */}
+        {tab === 'tables' && selectedTable && (
+          <aside className="w-panel-desktop">
+            {renderOrderPanel()}
+          </aside>
         )}
       </div>
     </div>
   );
+
+  /* ─── Shared order panel renderer ─── */
+  function renderOrderPanel() {
+    return (
+      <div className="w-panel">
+        {/* Panel header */}
+        <div className="w-panel__header">
+          <button className="w-panel__back" onClick={() => { setSelectedTable(null); setSession(null); setShowMenu(false); setCart([]); }}>
+            ← Quay lại
+          </button>
+          <div className="w-panel__info">
+            <span className="w-panel__code">{selectedTable!.code}</span>
+            <span className="w-panel__name">{selectedTable!.name}</span>
+          </div>
+        </div>
+
+        {sessionLoading ? (
+          <div className="w-panel__loading">Đang tải...</div>
+        ) : session ? (
+          <>
+            {/* Action buttons */}
+            <div className="w-actions">
+              <button className="w-actions__add" onClick={() => setShowMenu(!showMenu)}>
+                {showMenu ? '✕ Đóng menu' : '+ Thêm món'}
+              </button>
+              {session.status === 'OPEN' && session.orders.length > 0 && (
+                <button className="w-actions__pay" onClick={requestPayment}>
+                  Yêu cầu thanh toán
+                </button>
+              )}
+            </div>
+
+            {/* Menu overlay */}
+            {showMenu && (
+              <div className="w-menu">
+                <input className="w-menu__search" type="text" placeholder="Tìm món..."
+                  value={menuSearch} onChange={e => setMenuSearch(e.target.value)} />
+                <div className="w-menu__cats">
+                  <button className={`w-menu__cat ${menuCat === 'all' ? 'w-menu__cat--active' : ''}`}
+                    onClick={() => setMenuCat('all')}>Tất cả</button>
+                  {categories.map(c => (
+                    <button key={c.id} className={`w-menu__cat ${menuCat === c.id ? 'w-menu__cat--active' : ''}`}
+                      onClick={() => setMenuCat(c.id)}>{c.name}</button>
+                  ))}
+                </div>
+                <div className="w-menu__list">
+                  {filteredMenu.map(item => {
+                    const inCart = cart.find(c => c.menuItemId === item.id);
+                    return (
+                      <div key={item.id} className="w-menu__item">
+                        <div className="w-menu__item-info">
+                          <span className="w-menu__item-name">{item.name}</span>
+                          <span className="w-menu__item-price">{fmtMoney(Number(item.price))}</span>
+                        </div>
+                        {inCart ? (
+                          <div className="w-qty">
+                            <button className="w-qty__btn" onClick={() => updateCartQty(item.id, -1)}>−</button>
+                            <span className="w-qty__val">{inCart.quantity}</span>
+                            <button className="w-qty__btn" onClick={() => updateCartQty(item.id, 1)}>+</button>
+                          </div>
+                        ) : (
+                          <button className="w-menu__add" onClick={() => addToCart(item)}>+</button>
+                        )}
+                      </div>
+                    );
+                  })}
+                  {filteredMenu.length === 0 && <div className="w-empty w-empty--sm">Không tìm thấy món</div>}
+                </div>
+              </div>
+            )}
+
+            {/* Cart */}
+            {cart.length > 0 && (
+              <div className="w-cart">
+                <h4 className="w-cart__title">Giỏ hàng ({cart.length} món)</h4>
+                {cart.map(c => (
+                  <div key={c.menuItemId} className="w-cart__item">
+                    <div className="w-cart__item-top">
+                      <span className="w-cart__item-name">{c.name}</span>
+                      <span className="w-cart__item-total">{fmtMoney(c.price * c.quantity)}</span>
+                    </div>
+                    <div className="w-cart__item-controls">
+                      <div className="w-qty">
+                        <button className="w-qty__btn" onClick={() => updateCartQty(c.menuItemId, -1)}>−</button>
+                        <span className="w-qty__val">{c.quantity}</span>
+                        <button className="w-qty__btn" onClick={() => updateCartQty(c.menuItemId, 1)}>+</button>
+                      </div>
+                      <button className="w-cart__remove" onClick={() => removeFromCart(c.menuItemId)}>Xóa</button>
+                    </div>
+                    <div className="w-chips">
+                      {NOTE_CHIPS.map(chip => (
+                        <button key={chip} className={`w-chip ${c.note?.includes(chip) ? 'w-chip--active' : ''}`}
+                          onClick={() => toggleNote(c.menuItemId, chip)}>{chip}</button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+                <div className="w-cart__footer">
+                  <span className="w-cart__total">Tổng: {fmtMoney(cartTotal)}</span>
+                  <button className="w-cart__submit" onClick={submitOrder} disabled={submitting}>
+                    {submitting ? 'Đang gửi...' : 'Gửi đơn'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Current orders */}
+            <div className="w-session">
+              <h4 className="w-session__title">
+                Đơn hàng hiện tại
+                <span className="w-session__total">— Tổng: {fmtMoney(sessionTotal)}</span>
+              </h4>
+              {session.orders.length === 0 ? (
+                <div className="w-empty w-empty--sm">Chưa có đơn hàng</div>
+              ) : (
+                session.orders.map(order => (
+                  <div key={order.id} className="w-session__order">
+                    <div className="w-session__order-head">
+                      <span className="w-session__order-code">{order.orderCode}</span>
+                      <span className="w-session__order-time">{fmtTime(order.createdAt)}</span>
+                    </div>
+                    {order.items.map(item => {
+                      const st = ITEM_STATUS_LABELS[item.status];
+                      return (
+                        <div key={item.id} className="w-session__item">
+                          <div className="w-session__item-left">
+                            <span className="w-session__item-name">
+                              {item.quantity}x {item.itemNameSnapshot}
+                            </span>
+                            {item.note && <span className="w-session__item-note">{item.note}</span>}
+                          </div>
+                          <div className="w-session__item-right">
+                            <span className="w-session__item-status" style={{ color: st?.color }}>
+                              {st?.label || item.status}
+                            </span>
+                            {item.status === 'READY' && (
+                              <button className="w-serve-btn" onClick={() => markServed(item.id)}>Phục vụ</button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ))
+              )}
+            </div>
+          </>
+        ) : null}
+      </div>
+    );
+  }
 }
 
 const CSS = `
-/* ═══ Waiter ═══ */
-.wt-root{min-height:100dvh;background:#0a0a0f;color:#f5f5f7;font-family:'Inter',-apple-system,sans-serif;display:flex;flex-direction:column}
-.wt-loader{width:48px;height:2px;background:rgba(255,255,255,0.06);border-radius:1px;overflow:hidden;position:relative}
-.wt-loader::after{content:'';position:absolute;top:0;left:-48px;width:48px;height:100%;background:#D4A84A;animation:wt-slide 1s ease-in-out infinite}
-@keyframes wt-slide{0%{left:-48px}100%{left:48px}}
+/* ═══════════════════════════════════════
+   WAITER PAGE — Premium Dark Luxury
+   ═══════════════════════════════════════ */
 
-/* Toast */
-.wt-toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:2000;padding:12px 24px;border-radius:12px;font-size:0.85rem;font-weight:600;animation:wt-toastin 0.3s ease;box-shadow:0 8px 30px rgba(0,0,0,0.5);max-width:90vw;text-align:center}
-.wt-toast-success{background:#14532d;color:#4ade80;border:1px solid rgba(74,222,128,0.2)}
-.wt-toast-error{background:#450a0a;color:#f87171;border:1px solid rgba(239,68,68,0.2)}
-@keyframes wt-toastin{from{opacity:0;transform:translateX(-50%) translateY(-12px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
-
-/* Header */
-.wt-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.06);background:#111118;position:sticky;top:0;z-index:100}
-.wt-header-l{display:flex;align-items:center;gap:12px}
-.wt-brand{font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:#D4A84A}
-.wt-role{font-size:0.75rem;color:#71717a;font-weight:500}
-.wt-header-r{display:flex;gap:8px}
-.wt-logout{padding:8px 14px;border-radius:8px;font-size:0.78rem;font-weight:600;background:rgba(239,68,68,0.1);color:#f87171;border:1px solid rgba(239,68,68,0.15);cursor:pointer;font-family:inherit;min-height:44px}
-.wt-logout:hover{background:rgba(239,68,68,0.2)}
-
-/* Tabs */
-.wt-tabs{display:flex;gap:2px;padding:8px 16px;background:#111118;border-bottom:1px solid rgba(255,255,255,0.06);overflow-x:auto}
-.wt-tab{padding:10px 18px;border-radius:8px;font-size:0.82rem;font-weight:500;color:#71717a;background:transparent;cursor:pointer;font-family:inherit;white-space:nowrap;min-height:44px;display:flex;align-items:center;gap:6px;border:none}
-.wt-tab:hover{color:#a1a1aa}
-.wt-tab-active{background:rgba(212,168,74,0.08);color:#fbbf24;font-weight:600}
-.wt-badge{background:#ef4444;color:#fff;font-size:0.65rem;font-weight:700;padding:2px 6px;border-radius:10px;min-width:18px;text-align:center}
-
-/* Body */
-.wt-body{flex:1;padding:16px;overflow-y:auto}
-
-/* Tables grid */
-.wt-area{margin-bottom:20px}
-.wt-area-title{font-size:0.78rem;font-weight:600;color:#71717a;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:10px}
-.wt-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px}
-.wt-table-btn{display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 8px;border-radius:12px;background:#14141e;border:1.5px solid rgba(255,255,255,0.06);cursor:pointer;transition:all 0.15s;font-family:inherit;min-height:80px;justify-content:center;position:relative}
-.wt-table-btn:hover{background:#1c1c2a;transform:translateY(-1px)}
-.wt-table-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.wt-table-code{font-size:0.95rem;font-weight:700;color:#f5f5f7}
-.wt-table-name{font-size:0.68rem;color:#71717a;text-align:center;line-height:1.2}
-.wt-table-tag{position:absolute;top:6px;right:6px;font-size:0.6rem;font-weight:700;color:#a855f7;background:rgba(168,85,247,0.12);padding:2px 5px;border-radius:4px}
-.wt-table-orders{font-size:0.65rem;color:#3b82f6}
-
-/* Order view */
-.wt-order-view{animation:wt-fadein 0.2s}
-@keyframes wt-fadein{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-.wt-order-header{display:flex;align-items:center;gap:12px;margin-bottom:16px}
-.wt-back{padding:8px 14px;border-radius:8px;font-size:0.82rem;font-weight:600;color:#a1a1aa;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);cursor:pointer;font-family:inherit;white-space:nowrap;min-height:44px}
-.wt-back:hover{color:#f5f5f7}
-.wt-order-table-info{display:flex;flex-direction:column;gap:2px}
-.wt-order-table-code{font-size:1.1rem;font-weight:800;color:#D4A84A}
-.wt-order-table-name{font-size:0.78rem;color:#71717a}
-.wt-loading-msg{text-align:center;padding:24px;color:#71717a;font-size:0.85rem}
-
-/* Actions row */
-.wt-actions-row{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
-.wt-action-btn{padding:10px 18px;border-radius:10px;font-size:0.82rem;font-weight:600;cursor:pointer;font-family:inherit;border:none;min-height:44px}
-.wt-action-add{background:linear-gradient(135deg,#fbbf24,#d97706);color:#0a0a0f}
-.wt-action-add:hover{opacity:0.9}
-.wt-action-pay{background:rgba(168,85,247,0.12);color:#a855f7;border:1px solid rgba(168,85,247,0.2)}
-.wt-action-pay:hover{background:rgba(168,85,247,0.2)}
-
-/* Menu panel */
-.wt-menu-panel{background:#14141e;border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:14px;margin-bottom:16px;animation:wt-fadein 0.2s}
-.wt-menu-search{width:100%;padding:10px 14px;border-radius:10px;background:#1a1a24;border:1px solid rgba(255,255,255,0.08);color:#f5f5f7;font-size:0.85rem;font-family:inherit;outline:none;margin-bottom:10px}
-.wt-menu-search:focus{border-color:rgba(212,168,74,0.4)}
-.wt-menu-search::placeholder{color:#71717a}
-.wt-menu-cats{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;margin-bottom:10px}
-.wt-cat-btn{padding:6px 14px;border-radius:20px;font-size:0.75rem;font-weight:600;background:#1a1a24;border:1px solid rgba(255,255,255,0.06);color:#a1a1aa;cursor:pointer;white-space:nowrap;font-family:inherit;min-height:36px}
-.wt-cat-btn:hover{border-color:rgba(212,168,74,0.3);color:#f5f5f7}
-.wt-cat-active{background:rgba(212,168,74,0.1);border-color:rgba(212,168,74,0.3);color:#fbbf24}
-.wt-menu-list{max-height:300px;overflow-y:auto}
-.wt-menu-item{display:flex;align-items:center;justify-content:space-between;padding:10px 8px;border-bottom:1px solid rgba(255,255,255,0.04)}
-.wt-menu-item:last-child{border-bottom:none}
-.wt-menu-item-info{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1;margin-right:10px}
-.wt-menu-item-name{font-size:0.85rem;font-weight:600;color:#f5f5f7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.wt-menu-item-price{font-size:0.75rem;color:#D4A84A;font-weight:600}
-.wt-add-item-btn{width:36px;height:36px;border-radius:8px;background:rgba(74,222,128,0.1);color:#4ade80;font-size:1.2rem;font-weight:700;cursor:pointer;border:1px solid rgba(74,222,128,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:inherit;min-width:44px;min-height:44px}
-.wt-add-item-btn:hover{background:rgba(74,222,128,0.2)}
-
-/* Qty control */
-.wt-qty-ctrl{display:flex;align-items:center;gap:2px;background:#1a1a24;border-radius:8px;border:1px solid rgba(255,255,255,0.06)}
-.wt-qty-btn{width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:700;color:#a1a1aa;cursor:pointer;border:none;background:transparent;font-family:inherit;min-width:44px;min-height:44px}
-.wt-qty-btn:hover{color:#f5f5f7}
-.wt-qty-val{font-size:0.85rem;font-weight:700;color:#f5f5f7;min-width:24px;text-align:center}
-
-/* Cart */
-.wt-cart{background:#14141e;border:1px solid rgba(212,168,74,0.15);border-radius:14px;padding:14px;margin-bottom:16px}
-.wt-cart-title{font-size:0.85rem;font-weight:700;color:#D4A84A;margin-bottom:12px}
-.wt-cart-item{padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.04)}
-.wt-cart-item:last-child{border-bottom:none}
-.wt-cart-item-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
-.wt-cart-item-name{font-size:0.85rem;font-weight:600;color:#f5f5f7}
-.wt-cart-item-total{font-size:0.82rem;font-weight:700;color:#D4A84A}
-.wt-cart-item-mid{display:flex;align-items:center;gap:10px;margin-bottom:6px}
-.wt-cart-remove{font-size:0.72rem;color:#ef4444;cursor:pointer;background:none;border:none;font-family:inherit;padding:4px;min-height:32px;min-width:32px}
-
-/* Note chips */
-.wt-note-chips{display:flex;flex-wrap:wrap;gap:4px}
-.wt-chip{padding:4px 10px;border-radius:16px;font-size:0.7rem;font-weight:500;background:#1a1a24;border:1px solid rgba(255,255,255,0.06);color:#a1a1aa;cursor:pointer;font-family:inherit;min-height:28px}
-.wt-chip:hover{border-color:rgba(212,168,74,0.2);color:#f5f5f7}
-.wt-chip-active{background:rgba(212,168,74,0.1);border-color:rgba(212,168,74,0.3);color:#fbbf24}
-
-/* Cart footer */
-.wt-cart-footer{display:flex;align-items:center;justify-content:space-between;margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.06)}
-.wt-cart-total{font-size:0.95rem;font-weight:800;color:#f5f5f7}
-.wt-submit-btn{padding:10px 24px;border-radius:10px;font-size:0.85rem;font-weight:700;background:linear-gradient(135deg,#fbbf24,#d97706);color:#0a0a0f;cursor:pointer;border:none;font-family:inherit;min-height:44px}
-.wt-submit-btn:disabled{opacity:0.5;cursor:wait}
-.wt-submit-btn:hover:not(:disabled){opacity:0.9}
-
-/* Session orders */
-.wt-session-orders{margin-top:8px}
-.wt-section-title{font-size:0.9rem;font-weight:700;color:#f5f5f7;margin-bottom:12px}
-.wt-section-sub{font-weight:600;color:#D4A84A;font-size:0.82rem}
-.wt-order-card{background:#14141e;border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:12px;margin-bottom:10px}
-.wt-order-card-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.04)}
-.wt-order-code{font-size:0.78rem;font-weight:700;color:#D4A84A}
-.wt-order-time{font-size:0.72rem;color:#71717a}
-.wt-order-item{display:flex;align-items:flex-start;justify-content:space-between;padding:6px 0;gap:8px}
-.wt-order-item-l{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
-.wt-order-item-name{font-size:0.82rem;font-weight:600;color:#f5f5f7}
-.wt-order-item-note{font-size:0.7rem;color:#71717a;font-style:italic}
-.wt-order-item-r{display:flex;align-items:center;gap:6px;flex-shrink:0}
-.wt-order-item-status{font-size:0.72rem;font-weight:600}
-.wt-serve-btn{padding:5px 12px;border-radius:6px;font-size:0.72rem;font-weight:700;background:rgba(74,222,128,0.1);color:#4ade80;border:1px solid rgba(74,222,128,0.15);cursor:pointer;font-family:inherit;min-height:32px}
-.wt-serve-btn:hover{background:rgba(74,222,128,0.2)}
-
-/* Active orders tab */
-.wt-active-orders{display:flex;flex-direction:column;gap:8px}
-.wt-active-order-card{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:#14141e;border:1px solid rgba(255,255,255,0.06);border-radius:12px;cursor:pointer;font-family:inherit;color:inherit;border-left:3px solid;text-align:left;min-height:56px}
-.wt-active-order-card:hover{background:#1c1c2a}
-.wt-active-order-l{display:flex;align-items:center;gap:10px}
-.wt-active-code{font-size:0.95rem;font-weight:800;color:#D4A84A}
-.wt-active-name{font-size:0.78rem;color:#71717a}
-.wt-active-order-r{display:flex;align-items:center;gap:8px}
-.wt-active-count{font-size:0.78rem;color:#a1a1aa;font-weight:600}
-.wt-active-pay{font-size:0.68rem;font-weight:700;color:#a855f7;background:rgba(168,85,247,0.12);padding:3px 8px;border-radius:6px}
-
-/* Service requests */
-.wt-requests{display:flex;flex-direction:column;gap:8px}
-.wt-req-card{background:#14141e;border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:14px}
-.wt-req-top{display:flex;align-items:center;gap:10px;margin-bottom:6px}
-.wt-req-table{font-size:0.9rem;font-weight:800;color:#D4A84A}
-.wt-req-type{font-size:0.78rem;font-weight:600;color:#f5f5f7;background:rgba(59,130,246,0.1);padding:3px 8px;border-radius:6px}
-.wt-req-time{font-size:0.7rem;color:#71717a;margin-left:auto}
-.wt-req-note{font-size:0.78rem;color:#a1a1aa;margin-bottom:8px}
-.wt-req-done{padding:8px 18px;border-radius:8px;font-size:0.78rem;font-weight:600;background:rgba(74,222,128,0.1);color:#4ade80;border:1px solid rgba(74,222,128,0.15);cursor:pointer;font-family:inherit;min-height:44px;width:100%}
-.wt-req-done:hover{background:rgba(74,222,128,0.2)}
-
-/* Empty */
-.wt-empty-msg{text-align:center;padding:32px 16px;color:#71717a;font-size:0.85rem}
-
-/* Responsive */
-@media(min-width:768px){
-  .wt-grid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}
-  .wt-body{padding:24px}
-  .wt-header{padding:12px 24px}
-  .wt-tabs{padding:8px 24px}
+/* ─── Loading screen ─── */
+.w-loading-screen {
+  min-height: 100dvh;
+  background: #08080d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-@media(min-width:1024px){
-  .wt-body{max-width:900px;margin:0 auto;width:100%}
+.w-loader {
+  width: 56px;
+  height: 2px;
+  background: rgba(255,255,255,0.04);
+  border-radius: 2px;
+  overflow: hidden;
+  position: relative;
+}
+.w-loader::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -56px;
+  width: 56px;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, #D4A84A, transparent);
+  animation: w-slide 1.2s ease-in-out infinite;
+}
+@keyframes w-slide { 0% { left: -56px } 100% { left: 56px } }
+
+/* ─── Root ─── */
+.w-root {
+  min-height: 100dvh;
+  background: #08080d;
+  color: #f5f5f7;
+  font-family: 'Inter', -apple-system, sans-serif;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ─── Toast ─── */
+.w-toast {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  padding: 12px 28px;
+  border-radius: 40px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  animation: w-toast-in 0.35s cubic-bezier(0.16,1,0.3,1);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+  max-width: 90vw;
+  text-align: center;
+  backdrop-filter: blur(12px);
+}
+.w-toast--success { background: rgba(20,83,45,0.92); color: #4ade80; border: 1px solid rgba(74,222,128,0.2); }
+.w-toast--error { background: rgba(69,10,10,0.92); color: #f87171; border: 1px solid rgba(239,68,68,0.2); }
+@keyframes w-toast-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(-16px) scale(0.95); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+}
+
+/* ═══ Header ═══ */
+.w-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  height: 56px;
+  background: rgba(17,17,24,0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  position: sticky;
+  top: 0;
+  z-index: 200;
+}
+.w-header__left { display: flex; align-items: center; gap: 10px; }
+.w-header__title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: #D4A84A;
+}
+.w-header__center { display: flex; align-items: center; }
+.w-clock {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: rgba(255,255,255,0.35);
+  letter-spacing: 0.06em;
+  font-variant-numeric: tabular-nums;
+}
+.w-header__right { display: flex; align-items: center; gap: 10px; }
+.w-header__badge {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #ef4444;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+  animation: w-pulse-badge 2s ease-in-out infinite;
+  min-width: 26px;
+}
+@keyframes w-pulse-badge {
+  0%,100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.4); }
+  50% { box-shadow: 0 0 0 6px rgba(239,68,68,0); }
+}
+.w-header__user {
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.4);
+  font-weight: 500;
+  display: none;
+}
+.w-header__logout {
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: rgba(239,68,68,0.08);
+  color: #f87171;
+  border: 1px solid rgba(239,68,68,0.12);
+  cursor: pointer;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  transition: background 0.15s;
+}
+.w-header__logout:hover { background: rgba(239,68,68,0.15); }
+
+/* ═══ Tab bar ═══ */
+.w-tabbar {
+  background: rgba(17,17,24,0.6);
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  padding: 8px 16px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.w-tabbar::-webkit-scrollbar { display: none; }
+.w-tabbar__inner { display: flex; gap: 4px; }
+.w-tabbar__tab {
+  padding: 10px 20px;
+  border-radius: 40px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: rgba(255,255,255,0.35);
+  background: transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid transparent;
+  transition: all 0.2s;
+}
+.w-tabbar__tab:hover { color: rgba(255,255,255,0.6); }
+.w-tabbar__tab--active {
+  background: rgba(212,168,74,0.08);
+  border-color: rgba(212,168,74,0.15);
+  color: #D4A84A;
+  font-weight: 600;
+}
+.w-tabbar__count {
+  background: #ef4444;
+  color: #fff;
+  font-size: 0.6rem;
+  font-weight: 800;
+  padding: 1px 6px;
+  border-radius: 10px;
+  min-width: 18px;
+  text-align: center;
+  line-height: 1.4;
+}
+
+/* ═══ Layout ═══ */
+.w-layout { display: flex; flex: 1; overflow: hidden; }
+.w-main { flex: 1; overflow-y: auto; padding: 16px; }
+
+/* ═══ Table grid ═══ */
+.w-tables { animation: w-fadein 0.25s ease; }
+@keyframes w-fadein {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.w-area { margin-bottom: 24px; }
+.w-area__title {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.3);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 10px;
+}
+.w-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(105px, 1fr));
+  gap: 8px;
+}
+.w-table {
+  display: flex;
+  flex-direction: column;
+  padding: 14px 12px;
+  border-radius: 12px;
+  background: rgba(20,20,30,0.6);
+  border: 1px solid rgba(255,255,255,0.04);
+  border-left: 3px solid rgba(255,255,255,0.06);
+  cursor: pointer;
+  transition: all 0.15s;
+  min-height: 80px;
+  gap: 4px;
+}
+.w-table:hover {
+  background: rgba(28,28,42,0.7);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+}
+.w-table--pulse { animation: w-table-pulse 2s ease-in-out infinite; }
+@keyframes w-table-pulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(168,85,247,0.2); }
+  50% { box-shadow: 0 0 0 4px rgba(168,85,247,0); }
+}
+.w-table__top { display: flex; align-items: center; justify-content: space-between; }
+.w-table__code { font-size: 1rem; font-weight: 800; color: #f5f5f7; }
+.w-table__dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.w-table__name {
+  font-size: 0.68rem;
+  color: rgba(255,255,255,0.3);
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.w-table__meta { display: flex; gap: 4px; margin-top: 2px; }
+.w-table__tag {
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.w-table__tag--purple { color: #a855f7; background: rgba(168,85,247,0.1); }
+.w-table__tag--blue { color: #3b82f6; background: rgba(59,130,246,0.08); }
+
+/* ═══ Order panel (shared) ═══ */
+.w-panel { padding: 0; }
+.w-panel__header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  background: rgba(17,17,24,0.5);
+}
+.w-panel__back {
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.5);
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  cursor: pointer;
+  white-space: nowrap;
+  min-height: 44px;
+  transition: color 0.15s;
+}
+.w-panel__back:hover { color: #f5f5f7; }
+.w-panel__info { display: flex; flex-direction: column; gap: 1px; }
+.w-panel__code { font-size: 1.1rem; font-weight: 800; color: #D4A84A; }
+.w-panel__name { font-size: 0.75rem; color: rgba(255,255,255,0.35); }
+.w-panel__loading { text-align: center; padding: 32px; color: rgba(255,255,255,0.3); font-size: 0.85rem; }
+
+/* Panel body sections get padding */
+.w-actions,
+.w-menu,
+.w-cart,
+.w-session { margin: 0 16px; }
+
+/* ─── Actions row ─── */
+.w-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.w-actions__add {
+  padding: 10px 20px;
+  border-radius: 40px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #fbbf24, #d97706);
+  color: #08080d;
+  border: none;
+  cursor: pointer;
+  min-height: 48px;
+  transition: opacity 0.15s;
+}
+.w-actions__add:hover { opacity: 0.9; }
+.w-actions__pay {
+  padding: 10px 20px;
+  border-radius: 40px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: rgba(168,85,247,0.08);
+  color: #a855f7;
+  border: 1px solid rgba(168,85,247,0.15);
+  cursor: pointer;
+  min-height: 48px;
+  transition: background 0.15s;
+}
+.w-actions__pay:hover { background: rgba(168,85,247,0.15); }
+
+/* ─── Menu panel ─── */
+.w-menu {
+  background: rgba(20,20,30,0.5);
+  border: 1px solid rgba(255,255,255,0.04);
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 14px;
+  animation: w-fadein 0.2s;
+}
+.w-menu__search {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(26,26,36,0.8);
+  border: 1px solid rgba(255,255,255,0.06);
+  color: #f5f5f7;
+  font-size: 0.85rem;
+  font-family: inherit;
+  outline: none;
+  margin-bottom: 10px;
+  transition: border-color 0.2s;
+}
+.w-menu__search:focus { border-color: rgba(212,168,74,0.35); }
+.w-menu__search::placeholder { color: rgba(255,255,255,0.25); }
+.w-menu__cats {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  margin-bottom: 10px;
+  -webkit-overflow-scrolling: touch;
+}
+.w-menu__cats::-webkit-scrollbar { display: none; }
+.w-menu__cat {
+  padding: 7px 14px;
+  border-radius: 40px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  background: rgba(26,26,36,0.8);
+  border: 1px solid rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.4);
+  cursor: pointer;
+  white-space: nowrap;
+  min-height: 36px;
+  transition: all 0.15s;
+}
+.w-menu__cat:hover { color: rgba(255,255,255,0.6); border-color: rgba(212,168,74,0.15); }
+.w-menu__cat--active {
+  background: rgba(212,168,74,0.08);
+  border-color: rgba(212,168,74,0.25);
+  color: #D4A84A;
+}
+.w-menu__list { max-height: 300px; overflow-y: auto; }
+.w-menu__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 4px;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+.w-menu__item:last-child { border-bottom: none; }
+.w-menu__item-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; margin-right: 10px; }
+.w-menu__item-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #f5f5f7;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.w-menu__item-price { font-size: 0.72rem; color: #D4A84A; font-weight: 600; }
+.w-menu__add {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: rgba(34,197,94,0.08);
+  color: #22c55e;
+  font-size: 1.3rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid rgba(34,197,94,0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+.w-menu__add:hover { background: rgba(34,197,94,0.15); }
+
+/* ─── Qty control ─── */
+.w-qty {
+  display: flex;
+  align-items: center;
+  background: rgba(26,26,36,0.8);
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.04);
+}
+.w-qty__btn {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.5);
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  transition: color 0.15s;
+}
+.w-qty__btn:hover { color: #f5f5f7; }
+.w-qty__val {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #f5f5f7;
+  min-width: 24px;
+  text-align: center;
+}
+
+/* ─── Cart ─── */
+.w-cart {
+  background: rgba(20,20,30,0.5);
+  border: 1px solid rgba(212,168,74,0.1);
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 14px;
+}
+.w-cart__title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #D4A84A;
+  margin-bottom: 12px;
+}
+.w-cart__item {
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+.w-cart__item:last-child { border-bottom: none; }
+.w-cart__item-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.w-cart__item-name { font-size: 0.82rem; font-weight: 600; color: #f5f5f7; }
+.w-cart__item-total { font-size: 0.8rem; font-weight: 700; color: #D4A84A; }
+.w-cart__item-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.w-cart__remove {
+  font-size: 0.72rem;
+  color: #ef4444;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 6px 8px;
+  min-height: 36px;
+  min-width: 36px;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+.w-cart__remove:hover { background: rgba(239,68,68,0.08); }
+
+/* ─── Note chips ─── */
+.w-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.w-chip {
+  padding: 5px 12px;
+  border-radius: 40px;
+  font-size: 0.68rem;
+  font-weight: 500;
+  background: rgba(26,26,36,0.8);
+  border: 1px solid rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.4);
+  cursor: pointer;
+  min-height: 30px;
+  transition: all 0.15s;
+}
+.w-chip:hover { border-color: rgba(212,168,74,0.15); color: rgba(255,255,255,0.6); }
+.w-chip--active {
+  background: rgba(212,168,74,0.08);
+  border-color: rgba(212,168,74,0.25);
+  color: #D4A84A;
+}
+
+/* ─── Cart footer ─── */
+.w-cart__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255,255,255,0.04);
+}
+.w-cart__total { font-size: 0.95rem; font-weight: 800; color: #f5f5f7; }
+.w-cart__submit {
+  padding: 10px 28px;
+  border-radius: 40px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #fbbf24, #d97706);
+  color: #08080d;
+  cursor: pointer;
+  border: none;
+  min-height: 48px;
+  transition: opacity 0.15s;
+}
+.w-cart__submit:disabled { opacity: 0.4; cursor: wait; }
+.w-cart__submit:hover:not(:disabled) { opacity: 0.9; }
+
+/* ─── Session orders ─── */
+.w-session { margin-top: 8px; padding-bottom: 24px; }
+.w-session__title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #f5f5f7;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.w-session__total { font-weight: 600; color: #D4A84A; font-size: 0.8rem; }
+.w-session__order {
+  background: rgba(20,20,30,0.5);
+  border: 1px solid rgba(255,255,255,0.04);
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 8px;
+}
+.w-session__order-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+.w-session__order-code { font-size: 0.75rem; font-weight: 700; color: #D4A84A; }
+.w-session__order-time { font-size: 0.7rem; color: rgba(255,255,255,0.25); }
+.w-session__item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 5px 0;
+  gap: 8px;
+}
+.w-session__item-left { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.w-session__item-name { font-size: 0.8rem; font-weight: 600; color: #f5f5f7; }
+.w-session__item-note { font-size: 0.68rem; color: rgba(255,255,255,0.3); font-style: italic; }
+.w-session__item-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.w-session__item-status { font-size: 0.7rem; font-weight: 600; }
+.w-serve-btn {
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  background: rgba(34,197,94,0.08);
+  color: #22c55e;
+  border: 1px solid rgba(34,197,94,0.12);
+  cursor: pointer;
+  min-height: 34px;
+  transition: background 0.15s;
+}
+.w-serve-btn:hover { background: rgba(34,197,94,0.15); }
+
+/* ═══ Active orders tab ═══ */
+.w-orders-list { display: flex; flex-direction: column; gap: 8px; animation: w-fadein 0.25s; }
+.w-order-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background: rgba(20,20,30,0.6);
+  border: 1px solid rgba(255,255,255,0.04);
+  border-left: 3px solid #D4A84A;
+  border-radius: 12px;
+  cursor: pointer;
+  text-align: left;
+  min-height: 56px;
+  transition: all 0.15s;
+}
+.w-order-card:hover { background: rgba(28,28,42,0.7); }
+.w-order-card__left { display: flex; align-items: center; gap: 12px; }
+.w-order-card__code { font-size: 0.95rem; font-weight: 800; color: #D4A84A; }
+.w-order-card__name { font-size: 0.75rem; color: rgba(255,255,255,0.35); }
+.w-order-card__right { display: flex; align-items: center; gap: 8px; }
+.w-order-card__count { font-size: 0.75rem; color: rgba(255,255,255,0.5); font-weight: 600; }
+.w-order-card__badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #a855f7;
+  background: rgba(168,85,247,0.1);
+  padding: 3px 10px;
+  border-radius: 40px;
+}
+
+/* ═══ Service requests tab ═══ */
+.w-reqs { display: flex; flex-direction: column; gap: 8px; animation: w-fadein 0.25s; }
+.w-req {
+  background: rgba(20,20,30,0.6);
+  border: 1px solid rgba(255,255,255,0.04);
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+.w-req__header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.w-req__table { font-size: 0.9rem; font-weight: 800; color: #D4A84A; }
+.w-req__type {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #f5f5f7;
+  background: rgba(59,130,246,0.08);
+  padding: 3px 10px;
+  border-radius: 40px;
+}
+.w-req__time { font-size: 0.68rem; color: rgba(255,255,255,0.25); margin-left: auto; }
+.w-req__note { font-size: 0.78rem; color: rgba(255,255,255,0.5); margin-bottom: 10px; }
+.w-req__resolve {
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  background: rgba(34,197,94,0.08);
+  color: #22c55e;
+  border: 1px solid rgba(34,197,94,0.1);
+  cursor: pointer;
+  min-height: 48px;
+  width: 100%;
+  transition: background 0.15s;
+}
+.w-req__resolve:hover { background: rgba(34,197,94,0.15); }
+
+/* ═══ Empty state ═══ */
+.w-empty {
+  text-align: center;
+  padding: 40px 16px;
+  color: rgba(255,255,255,0.25);
+  font-size: 0.85rem;
+}
+.w-empty--sm { padding: 20px 16px; }
+
+/* ═══ Mobile: hide desktop panel, show inline ═══ */
+.w-panel-desktop { display: none; }
+.w-panel-mobile { display: block; animation: w-fadein 0.25s; }
+
+/* ═══ Responsive ═══ */
+@media (min-width: 768px) {
+  .w-header { padding: 0 24px; }
+  .w-tabbar { padding: 8px 24px; }
+  .w-main { padding: 24px; }
+  .w-header__user { display: block; }
+  .w-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
+}
+
+@media (min-width: 1024px) {
+  .w-panel-mobile { display: none; }
+  .w-panel-desktop {
+    display: flex;
+    flex-direction: column;
+    width: 440px;
+    min-width: 440px;
+    border-left: 1px solid rgba(255,255,255,0.04);
+    background: rgba(14,14,20,0.6);
+    overflow-y: auto;
+    animation: w-panel-slide 0.3s cubic-bezier(0.16,1,0.3,1);
+  }
+  @keyframes w-panel-slide {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  .w-main--with-panel {
+    flex: 1;
+    min-width: 0;
+  }
+  .w-main { max-width: none; }
+}
+
+@media (min-width: 1280px) {
+  .w-panel-desktop { width: 500px; min-width: 500px; }
 }
 `;
