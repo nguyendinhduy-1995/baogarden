@@ -740,8 +740,8 @@ const CSS = `
 /* ─── Root ─── */
 .hp-root {
   min-height: 100dvh;
-  background: linear-gradient(180deg, #060a14, #0a0f1e, #0d1424);
-  color: #e2ddd5;
+  background: linear-gradient(180deg, #061240, #0a1854, #0c1d60);
+  color: #edf0f7;
   font-family: 'Inter', -apple-system, sans-serif;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
@@ -779,10 +779,10 @@ const CSS = `
   background: transparent;
 }
 .hp-header-solid {
-  background: rgba(6, 10, 20, 0.92);
+  background: rgba(6, 18, 64, 0.95);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(212, 168, 74, 0.08);
+  border-bottom: 1px solid rgba(212, 168, 74, 0.12);
   padding: 12px 24px;
 }
 .hp-header-inner {
@@ -829,7 +829,7 @@ const CSS = `
   font-size: 14px;
   font-weight: 700;
   background: linear-gradient(135deg, #D4A84A, #b8913e);
-  color: #060a14;
+  color: #061240;
   text-decoration: none;
   min-height: 48px;
   transition: all 0.2s;
@@ -897,7 +897,7 @@ const CSS = `
   border-radius: 12px;
   font-weight: 700;
   background: linear-gradient(135deg, #D4A84A, #b8913e);
-  color: #060a14;
+  color: #061240;
   text-decoration: none;
   min-height: 48px;
   line-height: 20px;
@@ -936,10 +936,10 @@ const CSS = `
   inset: 0;
   background: linear-gradient(
     180deg,
-    rgba(6, 10, 20, 0.5) 0%,
-    rgba(6, 10, 20, 0.65) 40%,
-    rgba(6, 10, 20, 0.85) 70%,
-    rgba(6, 10, 20, 0.98) 100%
+    rgba(6, 18, 64, 0.45) 0%,
+    rgba(6, 18, 64, 0.6) 40%,
+    rgba(6, 18, 64, 0.82) 70%,
+    rgba(10, 24, 84, 0.97) 100%
   );
 }
 .hp-hero-content {
@@ -1016,19 +1016,19 @@ const CSS = `
 .hp-sparkle-1 {
   width: 300px; height: 300px;
   top: 15%; left: -5%;
-  background: radial-gradient(circle, rgba(6,182,212,0.08) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(59,130,246,0.12) 0%, transparent 70%);
   animation: hp-float 8s ease-in-out infinite;
 }
 .hp-sparkle-2 {
   width: 200px; height: 200px;
   top: 30%; right: -3%;
-  background: radial-gradient(circle, rgba(168,85,247,0.06) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(96,165,250,0.08) 0%, transparent 70%);
   animation: hp-float 10s ease-in-out infinite reverse;
 }
 .hp-sparkle-3 {
   width: 150px; height: 150px;
   bottom: 20%; left: 10%;
-  background: radial-gradient(circle, rgba(212,168,74,0.08) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(212,168,74,0.1) 0%, transparent 70%);
   animation: hp-float 6s ease-in-out infinite 2s;
 }
 @keyframes hp-float {
@@ -1046,7 +1046,7 @@ const CSS = `
   font-size: 15px;
   font-weight: 700;
   background: linear-gradient(135deg, #D4A84A, #b8913e);
-  color: #060a14;
+  color: #061240;
   border: none;
   cursor: pointer;
   min-height: 48px;
@@ -1120,10 +1120,10 @@ const CSS = `
   gap: 12px;
   padding: 20px;
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.06);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   transition: all 0.2s;
   text-decoration: none;
   color: inherit;
@@ -1167,7 +1167,7 @@ const CSS = `
    ═══════════════════════════════════════════════════════════════ */
 .hp-booking {
   padding: 80px 0;
-  background: linear-gradient(180deg, rgba(10, 15, 30, 0.5), rgba(6, 10, 20, 0.8));
+  background: linear-gradient(180deg, rgba(8, 20, 72, 0.4), rgba(6, 18, 64, 0.6));
 }
 .hp-preset-grid {
   display: grid;
@@ -1358,7 +1358,7 @@ const CSS = `
    ═══════════════════════════════════════════════════════════════ */
 .hp-spaces {
   padding: 80px 0;
-  background: linear-gradient(180deg, rgba(13, 20, 36, 0.3), rgba(6, 10, 20, 0.5));
+  background: linear-gradient(180deg, rgba(8, 20, 72, 0.3), rgba(6, 18, 64, 0.5));
 }
 .hp-spaces-scroll {
   display: flex;
@@ -1388,7 +1388,7 @@ const CSS = `
 .hp-space-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, transparent 40%, rgba(6, 10, 20, 0.9) 100%);
+  background: linear-gradient(180deg, transparent 40%, rgba(6, 18, 64, 0.92) 100%);
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
@@ -1471,7 +1471,7 @@ const CSS = `
   border-radius: 100px;
   font-size: 12px;
   font-weight: 700;
-  color: #060a14;
+  color: #061240;
   margin-bottom: 16px;
 }
 .hp-today-title {
@@ -1498,7 +1498,7 @@ const CSS = `
    ═══════════════════════════════════════════════════════════════ */
 .hp-schedule {
   padding: 80px 0;
-  background: linear-gradient(180deg, rgba(13, 20, 36, 0.3), rgba(6, 10, 20, 0.5));
+  background: linear-gradient(180deg, rgba(8, 20, 72, 0.3), rgba(6, 18, 64, 0.5));
 }
 .hp-schedule-table-wrap {
   overflow-x: auto;
@@ -1678,7 +1678,7 @@ const CSS = `
    ═══════════════════════════════════════════════════════════════ */
 .hp-birthday {
   padding: 80px 0;
-  background: linear-gradient(180deg, rgba(13, 20, 36, 0.3), rgba(6, 10, 20, 0.5));
+  background: linear-gradient(180deg, rgba(8, 20, 72, 0.3), rgba(6, 18, 64, 0.5));
 }
 .hp-party-grid {
   display: grid;
@@ -1791,7 +1791,7 @@ const CSS = `
    ═══════════════════════════════════════════════════════════════ */
 .hp-community {
   padding: 80px 0;
-  background: linear-gradient(180deg, rgba(13, 20, 36, 0.3), rgba(6, 10, 20, 0.5));
+  background: linear-gradient(180deg, rgba(8, 20, 72, 0.3), rgba(6, 18, 64, 0.5));
   text-align: center;
 }
 .hp-community-text {
@@ -1828,8 +1828,8 @@ const CSS = `
    ═══════════════════════════════════════════════════════════════ */
 .hp-footer {
   padding: 64px 0 120px;
-  border-top: 1px solid rgba(255, 255, 255, 0.04);
-  background: rgba(4, 6, 10, 0.6);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(4, 10, 40, 0.6);
 }
 .hp-footer-grid {
   display: grid;
@@ -1892,7 +1892,7 @@ const CSS = `
   left: 0;
   right: 0;
   height: 56px;
-  background: rgba(6, 10, 20, 0.96);
+  background: rgba(6, 18, 64, 0.96);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-top: 1px solid rgba(255, 255, 255, 0.06);
