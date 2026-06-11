@@ -203,7 +203,7 @@ async function main() {
         tableId: table.id,
         type: type as any,
         note: randomPick(srNotes),
-        status: resolved ? 'RESOLVED' : 'PENDING',
+        status: resolved ? 'DONE' : 'PENDING',
         resolvedAt: resolved ? new Date() : undefined,
         resolvedByUserId: resolved ? resolvedBy.id : undefined,
       },
