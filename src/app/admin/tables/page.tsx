@@ -27,6 +27,14 @@ interface RestaurantTable {
   _count?: { bookings: number };
 }
 
+interface QrData {
+  tableId: string;
+  tableCode: string;
+  tableName: string;
+  qrToken: string;
+  menuUrl: string;
+}
+
 const TABLE_STATUS_CONFIG: Record<string, { label: string; badge: string; color: string }> = {
   AVAILABLE: { label: 'Trống', badge: 'tb-badge-green', color: '#4ade80' },
   BOOKED: { label: 'Đã đặt', badge: 'tb-badge-red', color: '#ef4444' },
@@ -36,6 +44,22 @@ const TABLE_STATUS_CONFIG: Record<string, { label: string; badge: string; color:
 
 function formatCurrency(amount: number): string {
   return new Intl.NumberFormat('vi-VN', { style: 'decimal', maximumFractionDigits: 0 }).format(amount) + 'đ';
+}
+
+function buildPrintableQrCard(tableName: string, tableCode: string, menuUrl: string): string {
+  return `<div style="width:320px;padding:28px 24px;border:2px solid #d4a84a;border-radius:16px;text-align:center;font-family:'Segoe UI',system-ui,sans-serif;background:#fff;page-break-inside:avoid;margin:16px auto">
+    <div style="font-size:22px;font-weight:800;color:#d4a84a;letter-spacing:0.02em;margin-bottom:4px">BÁO GARDEN</div>
+    <div style="font-size:11px;color:#888;margin-bottom:18px;letter-spacing:0.08em;text-transform:uppercase">Ẩm thực &amp; Giải trí</div>
+    <div style="width:64px;height:2px;background:#d4a84a;margin:0 auto 18px"></div>
+    <div style="font-size:13px;color:#666;margin-bottom:4px">MÃ BÀN</div>
+    <div style="font-size:28px;font-weight:800;color:#222;margin-bottom:2px">${tableCode}</div>
+    <div style="font-size:15px;font-weight:600;color:#444;margin-bottom:18px">${tableName}</div>
+    <div style="padding:12px;background:#f8f6f1;border-radius:10px;margin-bottom:16px">
+      <div style="font-size:10px;color:#888;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.06em">Truy cập link đặt món</div>
+      <div style="font-size:11px;color:#d4a84a;word-break:break-all;font-weight:600">${menuUrl}</div>
+    </div>
+    <div style="font-size:11px;color:#999;line-height:1.6">Quét mã QR hoặc truy cập link<br/>để xem menu &amp; đặt món</div>
+  </div>`;
 }
 
 export default function TablesPage() {
@@ -57,6 +81,12 @@ export default function TablesPage() {
 
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
   const [confirm, setConfirm] = useState<{ table: RestaurantTable } | null>(null);
+
+  // QR state
+  const [qrModal, setQrModal] = useState<RestaurantTable | null>(null);
+  const [qrData, setQrData] = useState<QrData | null>(null);
+  const [qrLoading, setQrLoading] = useState(false);
+  const [qrRegenerating, setQrRegenerating] = useState(false);
 
   const flash = (msg: string, ok = true) => { setToast({ msg, ok }); setTimeout(() => setToast(null), 2500); };
 
@@ -179,6 +209,127 @@ export default function TablesPage() {
     }
   };
 
+  // --- QR Handlers ---
+  const openQrModal = async (table: RestaurantTable) => {
+    setQrModal(table);
+    setQrData(null);
+    setQrLoading(true);
+    try {
+      const res = await fetch(`/api/tables/${table.id}/qr`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          setQrData(data.data);
+        } else {
+          flash(data.error || 'Không thể tải QR', false);
+          setQrModal(null);
+        }
+      } else {
+        const data = await res.json().catch(() => ({ error: 'Bàn chưa có mã QR' }));
+        flash(data.error || 'Không thể tải QR', false);
+        setQrModal(null);
+      }
+    } catch {
+      flash('Lỗi kết nối', false);
+      setQrModal(null);
+    } finally {
+      setQrLoading(false);
+    }
+  };
+
+  const closeQrModal = () => {
+    setQrModal(null);
+    setQrData(null);
+  };
+
+  const handleCopyLink = async () => {
+    if (!qrData) return;
+    try {
+      await navigator.clipboard.writeText(qrData.menuUrl);
+      flash('Đã sao chép link');
+    } catch {
+      flash('Không thể sao chép', false);
+    }
+  };
+
+  const handleRegenerateQr = async () => {
+    if (!qrModal) return;
+    setQrRegenerating(true);
+    try {
+      const res = await fetch(`/api/tables/${qrModal.id}/regenerate-qr`, { method: 'POST' });
+      if (res.ok) {
+        flash('Đã tạo lại mã QR');
+        // Reload QR data
+        const qrRes = await fetch(`/api/tables/${qrModal.id}/qr`);
+        if (qrRes.ok) {
+          const data = await qrRes.json();
+          if (data.success) setQrData(data.data);
+        }
+      } else {
+        const data = await res.json().catch(() => ({ error: 'Không thể tạo lại QR' }));
+        flash(data.error || 'Không thể tạo lại QR', false);
+      }
+    } catch {
+      flash('Lỗi kết nối', false);
+    } finally {
+      setQrRegenerating(false);
+    }
+  };
+
+  const handlePrintQr = () => {
+    if (!qrData) return;
+    const html = buildPrintableQrCard(qrData.tableName, qrData.tableCode, qrData.menuUrl);
+    const w = window.open('', '_blank', 'width=420,height=600');
+    if (!w) return;
+    w.document.write(`<!DOCTYPE html><html><head><title>QR - ${qrData.tableCode}</title><style>@media print{body{margin:0}}</style></head><body style="display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#fff">${html}</body></html>`);
+    w.document.close();
+    w.focus();
+    w.print();
+  };
+
+  const handleDownloadQr = () => {
+    if (!qrData) return;
+    const html = buildPrintableQrCard(qrData.tableName, qrData.tableCode, qrData.menuUrl);
+    const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>QR - ${qrData.tableCode} - ${qrData.tableName}</title></head><body style="display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#fff">${html}</body></html>`;
+    const blob = new Blob([fullHtml], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `QR-${qrData.tableCode}.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    flash('Đã tải file QR');
+  };
+
+  const handlePrintAllQr = async () => {
+    flash('Đang tải dữ liệu QR...');
+    const results: QrData[] = [];
+    for (const table of tables) {
+      try {
+        const res = await fetch(`/api/tables/${table.id}/qr`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.data) results.push(data.data);
+        }
+      } catch {
+        // skip tables without QR
+      }
+    }
+    if (results.length === 0) {
+      flash('Không có bàn nào có mã QR', false);
+      return;
+    }
+    const cards = results.map(d => buildPrintableQrCard(d.tableName, d.tableCode, d.menuUrl)).join('');
+    const w = window.open('', '_blank', 'width=800,height=600');
+    if (!w) return;
+    w.document.write(`<!DOCTYPE html><html><head><title>QR - Tất cả bàn</title><style>@media print{body{margin:0}.qr-grid{display:flex;flex-wrap:wrap;gap:0;justify-content:center}}</style></head><body style="margin:16px;background:#fff"><h2 style="text-align:center;font-family:system-ui;color:#333;margin-bottom:8px">Báo Garden - Mã QR tất cả bàn</h2><p style="text-align:center;font-family:system-ui;color:#888;font-size:13px;margin-bottom:24px">${results.length} bàn</p><div class="qr-grid" style="display:flex;flex-wrap:wrap;gap:16px;justify-content:center">${cards}</div></body></html>`);
+    w.document.close();
+    w.focus();
+    w.print();
+  };
+
   if (loading) {
     return (
       <div className="tb-loading">
@@ -213,6 +364,9 @@ export default function TablesPage() {
               Sơ đồ
             </button>
           </div>
+          <button className="tb-qr-all-btn" onClick={handlePrintAllQr}>
+            ⎙ In tất cả QR
+          </button>
           <button className="tb-add-btn" onClick={() => { resetForm(); setShowModal(true); }}>
             + Thêm bàn
           </button>
@@ -286,6 +440,7 @@ export default function TablesPage() {
                         <td className="tb-note-cell">{table.note || '—'}</td>
                         <td>
                           <div className="tb-acts">
+                            <button className="tb-act tb-act-qr" onClick={() => openQrModal(table)}>QR</button>
                             <button className="tb-act tb-act-ghost" onClick={() => handleEdit(table)}>Sửa</button>
                             <button className="tb-act tb-act-danger" onClick={() => handleDeleteConfirm(table)}>Xóa</button>
                           </div>
@@ -320,6 +475,7 @@ export default function TablesPage() {
                     </div>
                     {table.note && <div className="tb-card-note">{table.note}</div>}
                     <div className="tb-acts">
+                      <button className="tb-act tb-act-qr" onClick={() => openQrModal(table)}>QR</button>
                       <button className="tb-act tb-act-ghost" onClick={() => handleEdit(table)}>Sửa</button>
                       <button className="tb-act tb-act-danger" onClick={() => handleDeleteConfirm(table)}>Xóa</button>
                     </div>
@@ -489,6 +645,71 @@ export default function TablesPage() {
         </div>
       )}
 
+      {/* QR Modal */}
+      {qrModal && (
+        <div className="tb-overlay" onClick={e => e.target === e.currentTarget && closeQrModal()}>
+          <div className="tb-modal tb-qr-modal">
+            <div className="tb-modal-head">
+              <h2>Mã QR — {qrModal.code}</h2>
+              <button className="tb-modal-x" onClick={closeQrModal}>✕</button>
+            </div>
+            <div className="tb-modal-body">
+              {qrLoading ? (
+                <div className="tb-qr-loading">
+                  <div className="tb-loader" />
+                  <p>Đang tải...</p>
+                </div>
+              ) : qrData ? (
+                <>
+                  {/* QR Printable Card Preview */}
+                  <div className="tb-qr-preview" id="tb-qr-card">
+                    <div className="tb-qr-brand">BÁO GARDEN</div>
+                    <div className="tb-qr-brand-sub">Ẩm thực &amp; Giải trí</div>
+                    <div className="tb-qr-divider" />
+                    <div className="tb-qr-label">MÃ BÀN</div>
+                    <div className="tb-qr-code-big">{qrData.tableCode}</div>
+                    <div className="tb-qr-name">{qrData.tableName}</div>
+                    <div className="tb-qr-url-box">
+                      <div className="tb-qr-url-label">Link đặt món</div>
+                      <div className="tb-qr-url">{qrData.menuUrl}</div>
+                    </div>
+                    <div className="tb-qr-hint">Quét mã QR hoặc truy cập link để xem menu &amp; đặt món</div>
+                  </div>
+
+                  {/* Action buttons */}
+                  <div className="tb-qr-actions">
+                    <button className="tb-qr-act tb-qr-act-copy" onClick={handleCopyLink}>
+                      ⧉ Copy link
+                    </button>
+                    <button className="tb-qr-act tb-qr-act-download" onClick={handleDownloadQr}>
+                      ↓ Tải QR
+                    </button>
+                    <button className="tb-qr-act tb-qr-act-print" onClick={handlePrintQr}>
+                      ⎙ In QR
+                    </button>
+                    <button
+                      className="tb-qr-act tb-qr-act-regen"
+                      onClick={handleRegenerateQr}
+                      disabled={qrRegenerating}
+                    >
+                      {qrRegenerating ? '...' : '↻ Tạo lại QR'}
+                    </button>
+                  </div>
+
+                  <div className="tb-qr-warn">
+                    Lưu ý: Tạo lại QR sẽ khiến mã cũ không còn hoạt động.
+                  </div>
+                </>
+              ) : (
+                <div className="tb-qr-loading">
+                  <p>Không thể tải dữ liệu QR</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Confirm dialog */}
       {confirm && (
         <div className="tb-overlay" onClick={e => e.target === e.currentTarget && setConfirm(null)}>
@@ -524,12 +745,14 @@ const CSS = `
 .tb-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;gap:12px;flex-wrap:wrap}
 .tb-title{font-size:1.4rem;font-weight:800;letter-spacing:-0.02em;color:var(--text-primary)}
 .tb-sub{font-size:0.82rem;color:var(--text-tertiary);margin-top:2px}
-.tb-header-actions{display:flex;align-items:center;gap:var(--space-md)}
+.tb-header-actions{display:flex;align-items:center;gap:var(--space-md);flex-wrap:wrap}
 .tb-view-toggle{display:flex;background:var(--bg-tertiary);border-radius:var(--radius-md);padding:3px}
 .tb-view-btn{padding:7px 14px;border-radius:6px;font-size:0.78rem;font-weight:500;background:none;border:none;color:var(--text-tertiary);cursor:pointer;transition:all 0.15s;white-space:nowrap;font-family:inherit;min-height:36px}
 .tb-view-btn-on{background:var(--bg-card);color:var(--text-primary);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,0.2)}
 .tb-add-btn{padding:9px 18px;border-radius:10px;font-size:0.82rem;font-weight:600;background:var(--gold-400);color:var(--bg-primary);border:none;cursor:pointer;white-space:nowrap;transition:opacity 0.15s;font-family:inherit;min-height:44px}
 .tb-add-btn:hover{opacity:0.85}
+.tb-qr-all-btn{padding:9px 18px;border-radius:10px;font-size:0.82rem;font-weight:600;background:var(--bg-tertiary);color:var(--text-secondary);border:1px solid var(--border-subtle);cursor:pointer;white-space:nowrap;transition:all 0.15s;font-family:inherit;min-height:44px}
+.tb-qr-all-btn:hover{border-color:var(--gold-400);color:var(--gold-400)}
 
 /* filters */
 .tb-filters{display:flex;align-items:center;gap:var(--space-lg);margin-bottom:var(--space-xl);flex-wrap:wrap}
@@ -575,6 +798,8 @@ const CSS = `
 .tb-act-ghost:hover{color:var(--text-primary)}
 .tb-act-danger{border-color:rgba(239,68,68,0.2);color:#ef4444}
 .tb-act-danger:hover{background:rgba(239,68,68,0.08)}
+.tb-act-qr{border-color:rgba(212,168,74,0.3);color:var(--gold-400);background:rgba(212,168,74,0.06)}
+.tb-act-qr:hover{background:rgba(212,168,74,0.14)}
 
 /* mobile cards */
 .tb-show-m{display:none}
@@ -635,6 +860,38 @@ const CSS = `
 .tb-toast-err{background:rgba(16,16,24,0.96);border:1px solid rgba(239,68,68,0.2);color:#f87171}
 @keyframes tb-down{from{transform:translateX(-50%) translateY(-16px);opacity:0}to{transform:translateX(-50%) translateY(0);opacity:1}}
 
+/* ========== QR MODAL STYLES ========== */
+.tb-qr-modal{max-width:460px}
+.tb-qr-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 0;gap:12px}
+.tb-qr-loading p{font-size:0.85rem;color:var(--text-tertiary)}
+
+.tb-qr-preview{padding:28px 24px;border:2px solid rgba(212,168,74,0.25);border-radius:16px;text-align:center;background:rgba(212,168,74,0.03)}
+.tb-qr-brand{font-size:1.3rem;font-weight:800;color:var(--gold-400);letter-spacing:0.02em}
+.tb-qr-brand-sub{font-size:0.7rem;color:var(--text-tertiary);margin-top:2px;letter-spacing:0.08em;text-transform:uppercase}
+.tb-qr-divider{width:48px;height:2px;background:var(--gold-400);margin:14px auto}
+.tb-qr-label{font-size:0.7rem;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:2px}
+.tb-qr-code-big{font-size:1.8rem;font-weight:800;color:var(--text-primary);line-height:1.2}
+.tb-qr-name{font-size:0.95rem;font-weight:600;color:var(--text-secondary);margin-bottom:16px}
+.tb-qr-url-box{padding:12px;background:var(--bg-tertiary);border-radius:10px;margin-bottom:14px}
+.tb-qr-url-label{font-size:0.65rem;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px}
+.tb-qr-url{font-size:0.75rem;color:var(--gold-400);word-break:break-all;font-weight:600;line-height:1.5}
+.tb-qr-hint{font-size:0.72rem;color:var(--text-tertiary);line-height:1.5}
+
+.tb-qr-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tb-qr-act{padding:10px 14px;border-radius:10px;font-size:0.8rem;font-weight:600;border:1px solid var(--border-subtle);background:var(--bg-tertiary);color:var(--text-secondary);cursor:pointer;transition:all 0.15s;font-family:inherit;min-height:44px;text-align:center;display:flex;align-items:center;justify-content:center;gap:4px}
+.tb-qr-act:hover{border-color:var(--gold-400);color:var(--gold-400)}
+.tb-qr-act:disabled{opacity:0.5;cursor:wait}
+.tb-qr-act-copy{border-color:rgba(59,130,246,0.25);color:rgba(96,165,250,1)}
+.tb-qr-act-copy:hover{background:rgba(59,130,246,0.08)}
+.tb-qr-act-download{border-color:rgba(34,197,94,0.25);color:#4ade80}
+.tb-qr-act-download:hover{background:rgba(34,197,94,0.08)}
+.tb-qr-act-print{border-color:rgba(212,168,74,0.25);color:var(--gold-400)}
+.tb-qr-act-print:hover{background:rgba(212,168,74,0.08)}
+.tb-qr-act-regen{border-color:rgba(239,68,68,0.2);color:#f87171}
+.tb-qr-act-regen:hover{background:rgba(239,68,68,0.06)}
+
+.tb-qr-warn{font-size:0.72rem;color:var(--text-tertiary);text-align:center;padding:8px 12px;background:rgba(239,68,68,0.04);border:1px solid rgba(239,68,68,0.1);border-radius:8px;line-height:1.5}
+
 /* responsive */
 @media(max-width:640px){
   .tb-header{flex-direction:column;gap:12px}
@@ -653,5 +910,9 @@ const CSS = `
   .tb-floor{height:400px}
   .tb-legend{top:var(--space-sm);right:var(--space-sm);padding:var(--space-sm)}
   .tb-act{min-height:44px;padding:8px 14px;font-size:0.78rem}
+  .tb-qr-modal{max-width:100%}
+  .tb-qr-actions{grid-template-columns:1fr 1fr}
+  .tb-qr-code-big{font-size:1.5rem}
+  .tb-qr-preview{padding:20px 16px}
 }
 `;
