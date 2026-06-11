@@ -4,9 +4,16 @@ import { cookies } from 'next/headers';
 import prisma from './prisma';
 import type { User } from '@prisma/client';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'bao-garden-jwt-secret-key-2024-super-secure';
+function getJwtSecret(): string {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error('JWT_SECRET environment variable is required');
+  }
+  return secret;
+}
 const TOKEN_EXPIRY = '7d';
 const COOKIE_NAME = 'bao_garden_token';
+const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 
 export type SafeUser = Omit<User, 'passwordHash'>;
 
@@ -21,14 +28,14 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
 export function generateToken(user: SafeUser): string {
   return jwt.sign(
     { userId: user.id, email: user.email, role: user.role },
-    JWT_SECRET,
+    getJwtSecret(),
     { expiresIn: TOKEN_EXPIRY }
   );
 }
 
 export function verifyToken(token: string): { userId: string; email: string; role: string } | null {
   try {
-    return jwt.verify(token, JWT_SECRET) as { userId: string; email: string; role: string };
+    return jwt.verify(token, getJwtSecret()) as { userId: string; email: string; role: string };
   } catch {
     return null;
   }
@@ -96,7 +103,8 @@ export async function getUserFromRequest(request: Request): Promise<SafeUser | n
 }
 
 export function setAuthCookie(token: string): string {
-  return `${COOKIE_NAME}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${7 * 24 * 60 * 60}`;
+  const secure = IS_PRODUCTION ? '; Secure' : '';
+  return `${COOKIE_NAME}=${token}; Path=/; HttpOnly; SameSite=Lax${secure}; Max-Age=${7 * 24 * 60 * 60}`;
 }
 
 export function clearAuthCookie(): string {

@@ -34,8 +34,9 @@ enum CustomerType {
 
 enum TableStatus {
   AVAILABLE
-  RESERVED
+  BOOKED
   OCCUPIED
+  VIP
   CLEANING
   INACTIVE
 }
@@ -269,6 +270,10 @@ model Booking {
   events          BookingEvent[]
   sessions        TableSession[]
 
+  @@index([bookingDate, status])
+  @@index([customerId])
+  @@index([tableId, bookingDate])
+  @@index([createdByUserId])
   @@map("bookings")
 }
 
@@ -285,6 +290,7 @@ model BookingEvent {
   booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   user    User?   @relation(fields: [userId], references: [id])
 
+  @@index([bookingId])
   @@map("booking_events")
 }
 
@@ -367,6 +373,8 @@ model TableSession {
   events     OrderEvent[]
   serviceRequests ServiceRequest[]
 
+  @@index([tableId, status])
+  @@index([status])
   @@map("table_sessions")
 }
 
@@ -389,6 +397,9 @@ model Order {
   items      OrderItem[]
   events     OrderEvent[]
 
+  @@index([tableSessionId])
+  @@index([status])
+  @@index([createdAt])
   @@map("orders")
 }
 
@@ -411,6 +422,9 @@ model OrderItem {
   menuItem MenuItem @relation(fields: [menuItemId], references: [id])
   events   OrderEvent[]
 
+  @@index([orderId])
+  @@index([department, status])
+  @@index([menuItemId])
   @@map("order_items")
 }
 
@@ -429,6 +443,7 @@ model Payment {
   session TableSession @relation(fields: [tableSessionId], references: [id])
   cashier User?        @relation(fields: [cashierUserId], references: [id])
 
+  @@index([tableSessionId])
   @@map("payments")
 }
 
@@ -447,6 +462,8 @@ model OrderEvent {
   session    TableSession? @relation(fields: [tableSessionId], references: [id], onDelete: Cascade)
   createdBy  User?        @relation(fields: [createdByUserId], references: [id])
 
+  @@index([orderId])
+  @@index([tableSessionId])
   @@map("order_events")
 }
 
@@ -465,6 +482,8 @@ model ServiceRequest {
   session  TableSession?   @relation(fields: [tableSessionId], references: [id])
   resolvedBy User?         @relation("ResolvedByUser", fields: [resolvedByUserId], references: [id])
 
+  @@index([status])
+  @@index([tableId])
   @@map("service_requests")
 }
 

@@ -13,7 +13,7 @@ export async function GET(request: Request) {
     const where: Prisma.RestaurantTableWhereInput = {};
 
     if (status) {
-      const validStatuses = ['AVAILABLE', 'BOOKED', 'VIP', 'INACTIVE'];
+      const validStatuses = ['AVAILABLE', 'BOOKED', 'OCCUPIED', 'VIP', 'CLEANING', 'INACTIVE'];
       if (validStatuses.includes(status)) {
         where.status = status as Prisma.EnumTableStatusFilter;
       }
@@ -116,7 +116,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const validStatuses = ['AVAILABLE', 'BOOKED', 'VIP', 'INACTIVE'];
+    const validStatuses = ['AVAILABLE', 'BOOKED', 'OCCUPIED', 'VIP', 'CLEANING', 'INACTIVE'];
     if (tableStatus && !validStatuses.includes(tableStatus)) {
       return NextResponse.json(
         { success: false, error: 'Trạng thái bàn không hợp lệ' },

@@ -59,7 +59,7 @@ export async function PATCH(
       }
     }
 
-    const validStatuses = ['AVAILABLE', 'BOOKED', 'VIP', 'INACTIVE'];
+    const validStatuses = ['AVAILABLE', 'BOOKED', 'OCCUPIED', 'VIP', 'CLEANING', 'INACTIVE'];
     if (status && !validStatuses.includes(status)) {
       return NextResponse.json(
         { success: false, error: 'Trạng thái bàn không hợp lệ' },

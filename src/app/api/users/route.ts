@@ -89,7 +89,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const validRoles = ['ADMIN', 'MANAGER', 'BOOKING', 'RECEPTION'];
+    const validRoles = ['ADMIN', 'MANAGER', 'BOOKING', 'RECEPTION', 'WAITER', 'KITCHEN', 'BAR', 'CASHIER'];
     if (role && !validRoles.includes(role)) {
       return NextResponse.json(
         { success: false, error: 'Vai trò không hợp lệ' },
