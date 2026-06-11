@@ -285,6 +285,17 @@ export default function HomePage() {
         <div className="hp-hero-sparkle hp-sparkle-1" />
         <div className="hp-hero-sparkle hp-sparkle-2" />
         <div className="hp-hero-sparkle hp-sparkle-3" />
+        <div className="hp-hero-aurora" />
+        <div className="hp-fireflies">
+          <div className="hp-firefly" style={{ left: '10%', animationDelay: '0s' }} />
+          <div className="hp-firefly" style={{ left: '25%', animationDelay: '2s' }} />
+          <div className="hp-firefly" style={{ left: '40%', animationDelay: '4s' }} />
+          <div className="hp-firefly" style={{ left: '55%', animationDelay: '1s' }} />
+          <div className="hp-firefly" style={{ left: '70%', animationDelay: '3s' }} />
+          <div className="hp-firefly" style={{ left: '85%', animationDelay: '5s' }} />
+          <div className="hp-firefly" style={{ left: '15%', animationDelay: '6s' }} />
+          <div className="hp-firefly" style={{ left: '60%', animationDelay: '7s' }} />
+        </div>
         <div className="hp-hero-content">
           <h1 className="hp-hero-title">
             <span className="hp-hero-line1">Đến Báo Garden</span>
@@ -771,13 +782,17 @@ export default function HomePage() {
 
       {/* ═══ STICKY MOBILE BAR ═══ */}
       <div className="hp-mobile-bar">
+        <div className="hp-mbar-glow" />
         <a href={`tel:${HOTLINE_RAW}`} className="hp-mbar-btn hp-mbar-call">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
           <span>Gọi Ngay</span>
         </a>
         <Link href="/booking" className="hp-mbar-btn hp-mbar-book">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
           <span>Đặt Bàn</span>
         </Link>
         <a href={GOOGLE_MAPS_URL} target="_blank" rel="noopener noreferrer" className="hp-mbar-btn hp-mbar-map">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
           <span>Bản Đồ</span>
         </a>
       </div>
@@ -1156,6 +1171,112 @@ const CSS = `
 @keyframes hp-float {
   0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.4; }
   50% { transform: translate(30px, -40px) scale(1.15); opacity: 0.9; }
+}
+
+/* Aurora gradient behind hero */
+.hp-hero-aurora {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(120,80,220,0.06) 0%,
+    rgba(212,168,74,0.04) 25%,
+    transparent 50%,
+    rgba(6,182,212,0.04) 75%,
+    rgba(120,80,220,0.06) 100%
+  );
+  background-size: 400% 400%;
+  animation: hp-aurora 15s ease-in-out infinite;
+  z-index: 3;
+  pointer-events: none;
+}
+@keyframes hp-aurora {
+  0% { background-position: 0% 50%; }
+  25% { background-position: 100% 0%; }
+  50% { background-position: 100% 100%; }
+  75% { background-position: 0% 100%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Fireflies */
+.hp-fireflies {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  overflow: hidden;
+}
+.hp-firefly {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #D4A84A;
+  box-shadow: 0 0 8px 2px rgba(212,168,74,0.6), 0 0 20px 4px rgba(212,168,74,0.2);
+  bottom: 20%;
+  animation: hp-firefly-float 8s ease-in-out infinite;
+}
+.hp-firefly:nth-child(odd) {
+  width: 3px;
+  height: 3px;
+  background: rgba(168,130,255,0.8);
+  box-shadow: 0 0 6px 2px rgba(168,130,255,0.5), 0 0 16px 4px rgba(168,130,255,0.15);
+  animation-duration: 10s;
+}
+@keyframes hp-firefly-float {
+  0% { transform: translateY(0) translateX(0); opacity: 0; }
+  10% { opacity: 1; }
+  30% { transform: translateY(-120px) translateX(30px); opacity: 0.8; }
+  50% { transform: translateY(-200px) translateX(-20px); opacity: 1; }
+  70% { transform: translateY(-300px) translateX(15px); opacity: 0.6; }
+  90% { opacity: 0.2; }
+  100% { transform: translateY(-400px) translateX(-10px); opacity: 0; }
+}
+
+/* Glow pulse on gold buttons */
+.hp-btn-gold::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(212,168,74,0.4), rgba(168,130,255,0.2), rgba(212,168,74,0.4));
+  background-size: 200% 200%;
+  animation: hp-btn-glow 3s ease-in-out infinite;
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.hp-btn-gold:hover::before { opacity: 1; }
+@keyframes hp-btn-glow {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* Card hover glow effect */
+.hp-emotion-card:hover,
+.hp-upcoming-card:hover {
+  box-shadow: 0 0 30px rgba(120,80,220,0.08), 0 0 60px rgba(212,168,74,0.04);
+  border-color: rgba(212,168,74,0.15);
+}
+
+/* Section separator glow line */
+.hp-today::after,
+.hp-emotion::after,
+.hp-schedule::after,
+.hp-album::after {
+  content: '';
+  display: block;
+  width: 120px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(212,168,74,0.3), rgba(168,130,255,0.2), transparent);
+  margin: 0 auto;
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.hp-schedule, .hp-album {
+  position: relative;
 }
 
 /* ─── Buttons ─── */
@@ -2149,34 +2270,81 @@ const CSS = `
   bottom: 0;
   left: 0;
   right: 0;
-  height: 56px;
-  background: rgba(3, 7, 26, 0.96);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  height: 64px;
+  background: linear-gradient(180deg, rgba(6,16,58,0.97) 0%, rgba(3,7,26,0.99) 100%);
+  backdrop-filter: blur(24px) saturate(1.3);
+  -webkit-backdrop-filter: blur(24px) saturate(1.3);
+  border-top: 1px solid rgba(212,168,74,0.15);
   z-index: 99;
   padding-bottom: env(safe-area-inset-bottom, 0px);
+  box-shadow: 0 -4px 30px rgba(0,0,0,0.5), 0 -1px 20px rgba(212,168,74,0.05);
+}
+.hp-mbar-glow {
+  position: absolute;
+  top: -1px;
+  left: 10%;
+  right: 10%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(212,168,74,0.5), rgba(168,130,255,0.3), rgba(212,168,74,0.5), transparent);
+  animation: hp-mbar-glow-anim 4s ease-in-out infinite;
+}
+@keyframes hp-mbar-glow-anim {
+  0%, 100% { opacity: 0.4; transform: scaleX(0.8); }
+  50% { opacity: 1; transform: scaleX(1); }
 }
 .hp-mbar-btn {
   flex: 1;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0;
+  gap: 4px;
   text-decoration: none;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
-  font-family: 'Cormorant Garamond', serif;
-  letter-spacing: 0.05em;
-  transition: color 0.15s;
-  min-height: 48px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  transition: all 0.25s;
+  min-height: 56px;
+  position: relative;
 }
-.hp-mbar-call { color: #4ade80; }
-.hp-mbar-book { color: #D4A84A; }
-.hp-mbar-map { color: #06b6d4; }
-.hp-mbar-call:hover { color: #86efac; }
-.hp-mbar-book:hover { color: #FDE68A; }
-.hp-mbar-map:hover { color: #67e8f9; }
+.hp-mbar-btn svg {
+  transition: transform 0.25s, filter 0.25s;
+}
+.hp-mbar-call {
+  color: #4ade80;
+}
+.hp-mbar-book {
+  color: #D4A84A;
+  position: relative;
+}
+.hp-mbar-book::before {
+  content: '';
+  position: absolute;
+  inset: 6px 12px;
+  border-radius: 12px;
+  background: rgba(212,168,74,0.08);
+  border: 1px solid rgba(212,168,74,0.12);
+  transition: all 0.25s;
+}
+.hp-mbar-book:hover::before,
+.hp-mbar-book:active::before {
+  background: rgba(212,168,74,0.15);
+  border-color: rgba(212,168,74,0.3);
+  box-shadow: 0 0 20px rgba(212,168,74,0.1);
+}
+.hp-mbar-map {
+  color: #67b8f9;
+}
+.hp-mbar-call:hover,
+.hp-mbar-call:active { color: #86efac; }
+.hp-mbar-call:hover svg { transform: scale(1.15); filter: drop-shadow(0 0 6px rgba(74,222,128,0.4)); }
+.hp-mbar-book:hover,
+.hp-mbar-book:active { color: #FDE68A; }
+.hp-mbar-book:hover svg { transform: scale(1.15); filter: drop-shadow(0 0 6px rgba(212,168,74,0.5)); }
+.hp-mbar-map:hover,
+.hp-mbar-map:active { color: #93cffd; }
+.hp-mbar-map:hover svg { transform: scale(1.15); filter: drop-shadow(0 0 6px rgba(103,184,249,0.4)); }
 
 /* ═══════════════════════════════════════════════════════════════
    RESPONSIVE
