@@ -40,7 +40,27 @@
   --warning: #f59e0b;
   --error: #ef4444;
   --info: #3b82f6;
+}
 
+/* Light theme */
+[data-theme="light"] {
+  --bg-primary: #fafaf9;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f4f4f5;
+  --bg-card: #ffffff;
+  --bg-card-hover: #fafafa;
+  --bg-elevated: #ffffff;
+  --gold-gradient: linear-gradient(135deg, #d97706, #b45309);
+  --text-primary: #18181b;
+  --text-secondary: #52525b;
+  --text-tertiary: #a1a1aa;
+  --border-subtle: rgba(0, 0, 0, 0.08);
+  --border-default: rgba(0, 0, 0, 0.12);
+  --border-gold: rgba(180, 83, 9, 0.3);
+  color-scheme: light;
+}
+
+:root {
   /* ─── Spacing ─── */
   --space-xs: 4px;
   --space-sm: 8px;
@@ -482,63 +502,26 @@ input::placeholder, textarea::placeholder {
   flex-direction: column;
   gap: var(--space-sm);
   transition: all var(--transition-base);
-  position: relative;
-  overflow: hidden;
-}
-
-.stat-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: var(--gold-gradient);
-  opacity: 0;
-  transition: opacity var(--transition-base);
 }
 
 .stat-card:hover {
-  border-color: var(--border-gold);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-gold);
-}
-
-.stat-card:hover::before {
-  opacity: 1;
+  border-color: var(--border-default);
 }
 
 .stat-card .stat-label {
-  font-size: 0.8rem;
+  font-size: 0.72rem;
   color: var(--text-tertiary);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  font-weight: 600;
+  letter-spacing: 0.06em;
+  font-weight: 500;
 }
 
 .stat-card .stat-value {
   font-size: 1.8rem;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-}
-
-.stat-card .stat-change {
-  font-size: 0.8rem;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.stat-card .stat-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: var(--radius-md);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.2rem;
-  flex-shrink: 0;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--text-primary);
+  font-family: 'Inter', sans-serif;
 }
 
 /* ─── Page Layout ─── */

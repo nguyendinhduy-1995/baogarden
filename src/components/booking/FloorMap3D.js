@@ -1,48 +1,120 @@
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useMemo } from 'react';
 
-/** Single table seat on the floor map */
-function TableSeat({ table, isSelected, onClick }) {
-  const isBooked = table.status === 'booked';
-  const isVip = table.status === 'vip';
-  const isRoom = table.id.startsWith('V');
+/**
+ * Hotspot positions mapped to the actual 3D floor plan image (2838x1472).
+ * Each entry: { code, x%, y%, w%, h% } — center of the table on the image.
+ */
+const TABLE_HOTSPOTS = {
+  // ── Khu A (right side) ──
+  'A1':  { x: 74.2, y: 10.5, w: 6.8, h: 10.5 },
+  'A2':  { x: 82.5, y: 10.5, w: 6.8, h: 10.5 },
+  'A3':  { x: 72.5, y: 22.5, w: 5.5, h: 9.0 },
+  'A4':  { x: 78.8, y: 22.5, w: 5.5, h: 9.0 },
+  'A5':  { x: 85.3, y: 22.5, w: 5.5, h: 9.0 },
+  'A7':  { x: 77.5, y: 34.5, w: 5.5, h: 9.0 },
+  'A8':  { x: 84.5, y: 34.5, w: 5.5, h: 9.0 },
+  'A9':  { x: 85.8, y: 47.5, w: 6.5, h: 11.0 },
+  'A11': { x: 86.5, y: 61.0, w: 6.5, h: 10.0 },
+  'A13': { x: 89.5, y: 85.0, w: 6.0, h: 9.0 },
+  'A14': { x: 74.5, y: 78.0, w: 7.5, h: 10.0 },
+  'A15': { x: 63.8, y: 78.0, w: 7.5, h: 10.0 },
+  'A16': { x: 53.0, y: 78.0, w: 7.5, h: 10.0 },
+  'A17': { x: 42.2, y: 78.0, w: 7.5, h: 10.0 },
 
-  const colorClasses = isSelected
-    ? 'bg-gradient-to-br from-[#E8C44A] to-[#B8860B] border-[#F8C85A] shadow-[0_0_20px_rgba(248,200,90,0.45)] scale-105 z-30'
-    : isBooked
-      ? 'bg-gradient-to-br from-[#8B1C1C]/80 to-[#641414]/85 border-[#C7362E]/35 opacity-65 cursor-not-allowed'
-      : isVip
-        ? 'bg-gradient-to-br from-[#A06A0E]/85 to-[#7A5010]/88 border-[#F8C85A]/50 shadow-[0_2px_8px_rgba(248,200,90,0.2)]'
-        : isRoom
-          ? 'bg-gradient-to-br from-[#5523A0]/80 to-[#3C1960]/88 border-[#A020F0]/45 shadow-[0_2px_8px_rgba(160,32,240,0.15)]'
-          : 'bg-gradient-to-br from-[#1D7A30]/82 to-[#155020]/88 border-[#1DAA43]/50 shadow-[0_2px_6px_rgba(29,170,67,0.15)]';
+  // ── Khu B (left side) ──
+  'B1':  { x: 23.5, y: 10.5, w: 6.0, h: 9.5 },
+  'B2':  { x: 15.5, y: 10.5, w: 6.0, h: 9.5 },
+  'B3':  { x: 29.5, y: 22.5, w: 5.5, h: 9.0 },
+  'B4':  { x: 22.0, y: 22.5, w: 5.5, h: 9.0 },
+  'B5':  { x: 14.5, y: 22.5, w: 5.5, h: 9.0 },
+  'B6':  { x: 14.5, y: 34.5, w: 5.5, h: 9.0 },
+  'B8':  { x: 22.0, y: 34.5, w: 5.5, h: 9.0 },
+  'B10': { x: 29.5, y: 34.5, w: 5.5, h: 9.0 },
+  'B7':  { x: 14.5, y: 46.5, w: 5.5, h: 9.0 },
+  'B9':  { x: 22.0, y: 46.5, w: 5.5, h: 9.0 },
+  'B11': { x: 29.5, y: 46.5, w: 5.5, h: 9.0 },
+  'B12': { x: 28.5, y: 60.0, w: 5.8, h: 6.5 },
+  'B13': { x: 28.5, y: 67.0, w: 5.8, h: 6.5 },
 
-  const hoverClass = !isBooked
-    ? 'hover:scale-[1.2] hover:z-20 hover:shadow-lg'
-    : '';
+  // ── Khu T (center, in front of stage) ──
+  'T1':  { x: 65.5, y: 22.5, w: 5.5, h: 9.0 },
+  'T3':  { x: 57.5, y: 22.5, w: 5.5, h: 9.0 },
+  'T5':  { x: 49.5, y: 22.5, w: 5.5, h: 9.0 },
+  'T7':  { x: 41.0, y: 22.5, w: 5.5, h: 9.0 },
+  'T2':  { x: 65.5, y: 34.5, w: 5.5, h: 9.0 },
+  'T4':  { x: 57.5, y: 34.5, w: 5.5, h: 9.0 },
+  'T6':  { x: 49.5, y: 34.5, w: 5.5, h: 9.0 },
+  'T8':  { x: 41.0, y: 34.5, w: 5.5, h: 9.0 },
+  'T9':  { x: 68.5, y: 52.5, w: 6.0, h: 9.5 },
+  'T11': { x: 58.5, y: 52.5, w: 6.0, h: 9.5 },
+  'T13': { x: 48.5, y: 52.5, w: 6.0, h: 9.5 },
+  'T15': { x: 39.0, y: 52.5, w: 6.0, h: 9.5 },
+  'T10': { x: 68.5, y: 64.0, w: 6.0, h: 9.5 },
+  'T12': { x: 58.5, y: 64.0, w: 6.0, h: 9.5 },
+  'T14': { x: 48.5, y: 64.0, w: 6.0, h: 9.5 },
+  'T16': { x: 39.0, y: 64.0, w: 6.0, h: 9.5 },
+
+  // ── VIP 1 (bottom, blue sofas) ──
+  'V1-1': { x: 66.5, y: 93.0, w: 14.0, h: 10.0 },
+  'V1-2': { x: 47.0, y: 93.0, w: 14.0, h: 10.0 },
+  'V1-4': { x: 25.5, y: 78.0, w: 7.0, h: 18.0 },
+
+  // ── VIP 2 (left top, blue sofas) ──
+  'V2-1': { x: 5.5, y: 36.0, w: 5.5, h: 18.0 },
+  'V2-2': { x: 5.5, y: 10.0, w: 5.5, h: 14.0 },
+};
+
+/** Hotspot button overlaid on the floor plan image */
+function TableHotspot({ table, hotspot, isSelected, isBooked, isVip, onClick }) {
+  // Visual states
+  let borderColor = 'rgba(29, 170, 67, 0.6)';  // green = available
+  let bgColor = 'rgba(29, 170, 67, 0.12)';
+  let glowColor = 'rgba(29, 170, 67, 0.3)';
+
+  if (isSelected) {
+    borderColor = 'rgba(248, 200, 90, 0.95)';
+    bgColor = 'rgba(248, 200, 90, 0.2)';
+    glowColor = 'rgba(248, 200, 90, 0.5)';
+  } else if (isBooked) {
+    borderColor = 'rgba(199, 54, 46, 0.5)';
+    bgColor = 'rgba(199, 54, 46, 0.08)';
+    glowColor = 'none';
+  } else if (isVip) {
+    borderColor = 'rgba(248, 200, 90, 0.5)';
+    bgColor = 'rgba(248, 200, 90, 0.08)';
+    glowColor = 'rgba(248, 200, 90, 0.15)';
+  }
 
   return (
     <button
-      className={`absolute -translate-x-1/2 -translate-y-1/2 rounded border-[1.5px] flex items-center justify-center
-        text-[0.42rem] font-bold text-white tracking-wide cursor-pointer
-        transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]
-        ${isRoom ? 'rounded-md' : 'rounded'}
-        ${colorClasses} ${hoverClass}
-        ${isSelected ? 'animate-[selGlow_2s_ease-in-out_infinite]' : ''}
+      className={`absolute transition-all duration-200 ease-out
+        ${isBooked ? 'cursor-not-allowed' : 'cursor-pointer'}
+        ${!isBooked ? 'hover:scale-110 hover:z-20' : ''}
+        ${isSelected ? 'z-30 animate-[selGlow_2s_ease-in-out_infinite]' : 'z-10'}
       `}
       style={{
-        left: `${table.x}%`,
-        top: `${table.y}%`,
-        width: table.w || (isRoom ? 50 : 36),
-        height: table.h || (isRoom ? 30 : 22),
-        textShadow: '0 1px 3px rgba(0,0,0,0.7)',
+        left: `${hotspot.x - hotspot.w / 2}%`,
+        top: `${hotspot.y - hotspot.h / 2}%`,
+        width: `${hotspot.w}%`,
+        height: `${hotspot.h}%`,
+        background: bgColor,
+        border: `2px solid ${borderColor}`,
+        borderRadius: isVip ? '8px' : '5px',
+        boxShadow: isSelected
+          ? `0 0 15px ${glowColor}, inset 0 0 8px ${glowColor}`
+          : glowColor !== 'none'
+            ? `0 0 6px ${glowColor}`
+            : 'none',
+        backdropFilter: isSelected ? 'brightness(1.3)' : 'none',
       }}
       onClick={() => onClick(table)}
       disabled={isBooked}
       id={`table-${table.id}`}
+      title={`${table.code} · ${table.guests} khách · ${table.area}`}
     >
-      {table.label}
+      {/* Invisible — the table image underneath is the visual */}
     </button>
   );
 }
@@ -50,64 +122,61 @@ function TableSeat({ table, isSelected, onClick }) {
 export default function FloorMap3D({ tables, selectedId, onTableClick }) {
   const mapRef = useRef(null);
 
+  // Build a lookup from table code to table data
+  const tableByCode = useMemo(() => {
+    const map = {};
+    for (const t of tables) {
+      map[t.code] = t;
+    }
+    return map;
+  }, [tables]);
+
   return (
-    <div className="px-3 pb-4" style={{ perspective: '1200px', perspectiveOrigin: '50% 20%' }}>
-      {/* Golden metallic frame */}
+    <div className="px-3 pb-4">
+      {/* Container with aspect ratio matching image */}
       <div
-        className="rounded-2xl p-[3px] shadow-[0_20px_60px_rgba(0,0,0,0.7),0_4px_20px_rgba(0,0,0,0.5)]"
-        style={{
-          background: 'linear-gradient(145deg, #8b7530 0%, #c9a84a 15%, #e8cc6e 30%, #c9a84a 45%, #8b7530 55%, #a89040 70%, #d4b855 85%, #8b7530 100%)',
-          transform: 'rotateX(8deg)',
-          transformStyle: 'preserve-3d',
-        }}
+        ref={mapRef}
+        className="relative w-full rounded-xl overflow-hidden"
+        style={{ aspectRatio: '2838 / 1472' }}
       >
-        {/* Map container */}
-        <div
-          ref={mapRef}
-          className="relative w-full rounded-xl overflow-hidden bg-[#080610]"
-          style={{ aspectRatio: '1 / 1.08' }}
-        >
-          {/* Background 3D image */}
-          <img
-            src="/floor-plan-bg.png"
-            alt=""
-            className="absolute inset-0 w-full h-full object-cover select-none pointer-events-none z-0"
-            draggable={false}
-          />
+        {/* Actual 3D floor plan image */}
+        <img
+          src="/floor-plan-3d.jpg"
+          alt="Sơ đồ bàn Báo Garden"
+          className="absolute inset-0 w-full h-full object-cover select-none pointer-events-none z-0"
+          draggable={false}
+        />
 
-          {/* Dark overlay for contrast */}
-          <div className="absolute inset-0 bg-black/[0.18] pointer-events-none z-[1]" />
+        {/* Interactive hotspots overlay */}
+        {Object.entries(TABLE_HOTSPOTS).map(([code, hotspot]) => {
+          const table = tableByCode[code];
+          if (!table) return null;
 
-          {/* Stage label */}
-          <div className="absolute top-[5%] left-[30%] w-[40%] z-[5] text-center pointer-events-none">
-            <span className="text-[0.7rem] font-bold text-purple-300/50 tracking-widest"
-              style={{ textShadow: '0 0 12px rgba(160,32,240,0.5)' }}>
-              Sân khấu
-            </span>
-          </div>
+          const isBooked = table.status === 'booked';
+          const isVip = table.status === 'vip' || code.startsWith('V');
+          const isSelected = selectedId === table.id;
 
-          {/* Landmarks */}
-          <div className="absolute left-[1%] top-[46%] z-[5] pointer-events-none">
-            <span className="text-[0.55rem] font-semibold italic text-[#c9a44a]/70 tracking-wide">
-              Thu ngân
-            </span>
-          </div>
-          <div className="absolute right-0 top-[38%] z-[5] pointer-events-none" style={{ writingMode: 'vertical-rl' }}>
-            <span className="text-[0.55rem] font-semibold italic text-[#a88c5a]/60 tracking-wide">
-              Phòng chờ
-            </span>
-          </div>
-
-          {/* Table buttons */}
-          {tables.map(table => (
-            <TableSeat
-              key={table.id}
+          return (
+            <TableHotspot
+              key={code}
               table={table}
-              isSelected={selectedId === table.id}
+              hotspot={hotspot}
+              isSelected={isSelected}
+              isBooked={isBooked}
+              isVip={isVip}
               onClick={onTableClick}
             />
-          ))}
-        </div>
+          );
+        })}
+
+        {/* Booked overlay legend indicator */}
+        {tables.some(t => t.status === 'booked') && (
+          <div className="absolute bottom-2 left-2 z-20 px-2 py-1 rounded bg-black/60 backdrop-blur-sm">
+            <span className="text-[0.55rem] text-red-400/80 font-medium">
+              Bàn viền đỏ = Đã đặt
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );

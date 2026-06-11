@@ -1,7 +1,5 @@
 'use client';
 
-import { FiCheckCircle, FiShield, FiHeadphones, FiUsers, FiMapPin, FiClock, FiCalendar, FiTag } from 'react-icons/fi';
-
 export default function SelectedTableCard({ table, onBook, formatVND }) {
   if (!table) return null;
 
@@ -48,18 +46,9 @@ export default function SelectedTableCard({ table, onBook, formatVND }) {
               )}
             </div>
             <div className="flex flex-wrap items-center gap-x-2.5 text-[10px] text-gray-400">
-              <span className="flex items-center gap-0.5">
-                <FiUsers className="w-2.5 h-2.5 shrink-0" />
-                {guests} khách
-              </span>
-              <span className="flex items-center gap-0.5">
-                <FiMapPin className="w-2.5 h-2.5 shrink-0" />
-                {area}
-              </span>
-              <span className="flex items-center gap-0.5">
-                <FiClock className="w-2.5 h-2.5 shrink-0" />
-                Tạm giữ 15 phút
-              </span>
+              <span>{guests} khách</span>
+              <span>·</span>
+              <span>{area}</span>
             </div>
           </div>
 
@@ -79,39 +68,29 @@ export default function SelectedTableCard({ table, onBook, formatVND }) {
         </div>
       </div>
 
-      {/* Buttons */}
-      <div className="grid grid-cols-[1.3fr_1fr] gap-2 mt-2.5">
+      {/* Book button */}
+      <div className="mt-2.5">
         <button
           onClick={() => onBook?.(table)}
-          className="flex items-center justify-center gap-1.5 py-3 rounded-xl font-bold text-[13px] text-[#05070B]
+          className="w-full flex items-center justify-center gap-1.5 py-3 rounded-xl font-bold text-[13px] text-[#05070B]
                      bg-gradient-to-r from-[#F8C85A] to-[#D89A32]
                      shadow-[0_4px_16px_rgba(212,168,74,0.3)]
                      hover:shadow-[0_4px_24px_rgba(212,168,74,0.45)]
                      active:scale-[0.97] transition-all duration-200"
         >
-          <FiCalendar className="w-3.5 h-3.5" />
           Đặt bàn ngay
-        </button>
-        <button
-          className="flex items-center justify-center gap-1.5 py-3 rounded-xl font-bold text-[13px] text-[#D4A84A]
-                     border border-[#D4A84A]/30 bg-[#D4A84A]/5
-                     hover:bg-[#D4A84A]/10 hover:border-[#D4A84A]/50
-                     active:scale-[0.97] transition-all duration-200"
-        >
-          <FiTag className="w-3.5 h-3.5" />
-          Xem ưu đãi
         </button>
       </div>
 
       {/* Trust badges */}
       <div className="flex items-center justify-around mt-2.5 pt-2 border-t border-white/5">
         {[
-          { icon: FiCheckCircle, text: 'Xác nhận tức thì' },
-          { icon: FiShield, text: 'Giữ bàn chắc chắn' },
-          { icon: FiHeadphones, text: 'Hỗ trợ 24/7' },
-        ].map(({ icon: Icon, text }) => (
+          { symbol: '✓', text: 'Xác nhận tức thì' },
+          { symbol: '◈', text: 'Giữ bàn chắc chắn' },
+          { symbol: '☎', text: 'Hỗ trợ 24/7' },
+        ].map(({ symbol, text }) => (
           <div key={text} className="flex items-center gap-1">
-            <Icon className="w-2.5 h-2.5 text-emerald-500/70" />
+            <span className="text-[9px] text-emerald-500/70">{symbol}</span>
             <span className="text-[9px] text-gray-500">{text}</span>
           </div>
         ))}

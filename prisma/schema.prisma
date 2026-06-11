@@ -1,0 +1,193 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  MANAGER
+  BOOKING
+  RECEPTION
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum CustomerType {
+  NEW
+  RETURNING
+  VIP
+  BLACKLIST
+}
+
+enum TableStatus {
+  AVAILABLE
+  BOOKED
+  VIP
+  INACTIVE
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  ARRIVED
+  CANCELLED
+  NO_SHOW
+  COMPLETED
+}
+
+enum BookingSource {
+  PUBLIC
+  STAFF
+  PHONE
+  FACEBOOK
+  ZALO
+  WALK_IN
+}
+
+enum BookingEventType {
+  CREATED
+  CONFIRMED
+  ARRIVED
+  CANCELLED
+  NO_SHOW
+  COMPLETED
+  UPDATED
+  TABLE_CHANGED
+  NOTE_ADDED
+}
+
+model User {
+  id           String     @id @default(cuid())
+  name         String
+  email        String     @unique
+  phone        String?
+  passwordHash String
+  role         UserRole   @default(BOOKING)
+  status       UserStatus @default(ACTIVE)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  createdBookings   Booking[]      @relation("CreatedByUser")
+  confirmedBookings Booking[]      @relation("ConfirmedByUser")
+  checkedInBookings Booking[]      @relation("CheckedInByUser")
+  bookingEvents     BookingEvent[]
+  customerNotes     CustomerNote[]
+
+  @@map("users")
+}
+
+model Customer {
+  id           String       @id @default(cuid())
+  name         String
+  phone        String       @unique
+  note         String?
+  customerType CustomerType @default(NEW)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  bookings      Booking[]
+  customerNotes CustomerNote[]
+
+  @@map("customers")
+}
+
+model TableArea {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tables RestaurantTable[]
+
+  @@map("table_areas")
+}
+
+model RestaurantTable {
+  id            String      @id @default(cuid())
+  code          String      @unique
+  name          String
+  areaId        String
+  status        TableStatus @default(AVAILABLE)
+  minGuests     Int         @default(2)
+  maxGuests     Int         @default(4)
+  depositAmount Decimal     @default(0) @db.Decimal(12, 0)
+  minSpend      Decimal     @default(0) @db.Decimal(12, 0)
+  note          String?
+  posX          Float       @default(0)
+  posY          Float       @default(0)
+  width         Float       @default(36)
+  height        Float       @default(22)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  area     TableArea @relation(fields: [areaId], references: [id])
+  bookings Booking[]
+
+  @@map("restaurant_tables")
+}
+
+model Booking {
+  id                String        @id @default(cuid())
+  bookingCode       String        @unique
+  customerId        String
+  tableId           String
+  bookingDate       DateTime      @db.Date
+  bookingTime       String
+  guestCount        Int
+  status            BookingStatus @default(PENDING)
+  depositAmount     Decimal       @default(0) @db.Decimal(12, 0)
+  minSpend          Decimal       @default(0) @db.Decimal(12, 0)
+  note              String?
+  source            BookingSource @default(PUBLIC)
+  createdByUserId   String?
+  confirmedByUserId String?
+  checkedInByUserId String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  customer      Customer        @relation(fields: [customerId], references: [id])
+  table         RestaurantTable @relation(fields: [tableId], references: [id])
+  createdByUser   User?         @relation("CreatedByUser", fields: [createdByUserId], references: [id])
+  confirmedByUser User?         @relation("ConfirmedByUser", fields: [confirmedByUserId], references: [id])
+  checkedInByUser User?         @relation("CheckedInByUser", fields: [checkedInByUserId], references: [id])
+  events        BookingEvent[]
+
+  @@map("bookings")
+}
+
+model BookingEvent {
+  id        String           @id @default(cuid())
+  bookingId String
+  userId    String?
+  type      BookingEventType
+  oldStatus BookingStatus?
+  newStatus BookingStatus?
+  note      String?
+  createdAt DateTime         @default(now())
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  user    User?   @relation(fields: [userId], references: [id])
+
+  @@map("booking_events")
+}
+
+model CustomerNote {
+  id         String   @id @default(cuid())
+  customerId String
+  userId     String
+  note       String
+  createdAt  DateTime @default(now())
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id])
+
+  @@map("customer_notes")
+}

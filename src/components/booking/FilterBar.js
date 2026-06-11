@@ -1,8 +1,5 @@
 'use client';
 
-import { useState } from 'react';
-import { FiCalendar, FiClock, FiUsers, FiChevronDown } from 'react-icons/fi';
-
 export default function FilterBar({
   date,
   time,
@@ -22,7 +19,7 @@ export default function FilterBar({
                           rounded-xl border border-[#D4A84A]/40
                           bg-gradient-to-r from-[#D4A84A]/10 to-[#D4A84A]/5
                           cursor-pointer group">
-          <FiCalendar className="w-4 h-4 text-[#D4A84A] shrink-0" />
+          <span className="text-[#D4A84A] text-sm shrink-0">📅</span>
           <select
             value={date}
             onChange={(e) => onDateChange(e.target.value)}
@@ -31,16 +28,14 @@ export default function FilterBar({
                        [&>option]:bg-[#08111C] [&>option]:text-white"
           >
             <option value="">Ngày</option>
-            {/* Generate next 14 days */}
             {Array.from({ length: 14 }, (_, i) => {
               const d = new Date();
               d.setDate(d.getDate() + i);
               const val = d.toISOString().split('T')[0];
-              const label = d.toLocaleDateString('vi-VN', {
-                weekday: 'short',
-                day: '2-digit',
-                month: '2-digit',
-              });
+              const dd = String(d.getDate()).padStart(2, '0');
+              const mm = String(d.getMonth() + 1).padStart(2, '0');
+              const days = ['CN','T2','T3','T4','T5','T6','T7'];
+              const label = `${days[d.getDay()]}, ${dd}/${mm}`;
               return (
                 <option key={val} value={val}>
                   {label}
@@ -48,8 +43,7 @@ export default function FilterBar({
               );
             })}
           </select>
-          <FiChevronDown className="w-3.5 h-3.5 text-[#D4A84A]/60 shrink-0
-                                    group-hover:text-[#D4A84A] transition-colors" />
+          <span className="text-[#D4A84A]/60 text-xs shrink-0 group-hover:text-[#D4A84A] transition-colors">▾</span>
         </label>
       </div>
 
@@ -59,7 +53,7 @@ export default function FilterBar({
                           rounded-xl border border-[#D4A84A]/40
                           bg-gradient-to-r from-[#D4A84A]/10 to-[#D4A84A]/5
                           cursor-pointer group">
-          <FiClock className="w-4 h-4 text-[#D4A84A] shrink-0" />
+          <span className="text-[#D4A84A] text-sm shrink-0">⏰</span>
           <select
             value={time}
             onChange={(e) => onTimeChange(e.target.value)}
@@ -78,8 +72,7 @@ export default function FilterBar({
               </option>
             ))}
           </select>
-          <FiChevronDown className="w-3.5 h-3.5 text-[#D4A84A]/60 shrink-0
-                                    group-hover:text-[#D4A84A] transition-colors" />
+          <span className="text-[#D4A84A]/60 text-xs shrink-0 group-hover:text-[#D4A84A] transition-colors">▾</span>
         </label>
       </div>
 
@@ -89,7 +82,7 @@ export default function FilterBar({
                           rounded-xl border border-[#D4A84A]/40
                           bg-gradient-to-r from-[#D4A84A]/10 to-[#D4A84A]/5
                           cursor-pointer group">
-          <FiUsers className="w-4 h-4 text-[#D4A84A] shrink-0" />
+          <span className="text-[#D4A84A] text-sm shrink-0">👥</span>
           <select
             value={guests}
             onChange={(e) => onGuestsChange(Number(e.target.value))}
@@ -104,8 +97,7 @@ export default function FilterBar({
               </option>
             ))}
           </select>
-          <FiChevronDown className="w-3.5 h-3.5 text-[#D4A84A]/60 shrink-0
-                                    group-hover:text-[#D4A84A] transition-colors" />
+          <span className="text-[#D4A84A]/60 text-xs shrink-0 group-hover:text-[#D4A84A] transition-colors">▾</span>
         </label>
       </div>
     </div>
