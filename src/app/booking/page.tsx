@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 
 /* ─── Types ── */
 interface RawTable {
@@ -35,6 +36,15 @@ const AREA_DESC: Record<string,string> = {
 const PENDING_TIMEOUT_MS = 10 * 60 * 1000; // 10 phút
 
 export default function PublicBookingPage() {
+  return (
+    <Suspense fallback={<div style={{display:'flex',alignItems:'center',justifyContent:'center',minHeight:'100vh',background:'#0a0a0f',color:'#D4A84A',fontSize:14}}>Đang tải...</div>}>
+      <BookingContent />
+    </Suspense>
+  );
+}
+
+function BookingContent() {
+  const searchParams = useSearchParams();
   const today = new Date().toISOString().split('T')[0];
   const [date, setDate] = useState(today);
   const [time, setTime] = useState('20:00');
@@ -48,6 +58,19 @@ export default function PublicBookingPage() {
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  // Prefill from URL params (?name=X&phone=Y)
+  useEffect(() => {
+    const prefillName = searchParams.get('name');
+    const prefillPhone = searchParams.get('phone');
+    if (prefillName || prefillPhone) {
+      setForm(prev => ({
+        ...prev,
+        name: prefillName || prev.name,
+        phone: prefillPhone || prev.phone,
+      }));
+    }
+  }, [searchParams]);
   const [confirmed, setConfirmed] = useState<{code:string;table:string;area:string;date:string;time:string;guests:number;name:string}|null>(null);
   const [activeArea, setActiveArea] = useState('all');
   const [now, setNow] = useState(Date.now());

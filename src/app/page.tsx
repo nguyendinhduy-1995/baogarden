@@ -769,9 +769,10 @@ export default function HomePage() {
             </div>
             <div className="hp-footer-col">
               <h4 className="hp-footer-heading">Kết nối</h4>
-              <a href="#" className="hp-footer-link">Facebook</a>
-              <a href="#" className="hp-footer-link">Instagram</a>
-              <a href="#" className="hp-footer-link">TikTok</a>
+              <a href="https://www.facebook.com/baogardentanphu" target="_blank" rel="noopener noreferrer" className="hp-footer-link">Facebook</a>
+              <a href="https://www.instagram.com/baogarden.tanphu" target="_blank" rel="noopener noreferrer" className="hp-footer-link">Instagram</a>
+              <a href="https://www.tiktok.com/@baogarden.tanphu" target="_blank" rel="noopener noreferrer" className="hp-footer-link">TikTok</a>
+              <a href="https://zalo.me/0877766663" target="_blank" rel="noopener noreferrer" className="hp-footer-link">Zalo</a>
             </div>
           </div>
           <div className="hp-footer-bottom">
