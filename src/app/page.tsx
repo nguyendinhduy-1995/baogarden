@@ -667,7 +667,6 @@ export default function HomePage() {
             { src: '/home/food-platter.jpg', alt: 'Đồ ăn thượng hạng' },
             { src: '/home/party-crowd.jpg', alt: 'Birthday party' },
             { src: '/home/hall-overview.jpg', alt: 'Main Hall' },
-            { src: '/home/dj-team.jpg', alt: 'DJ Team' },
             { src: '/home/birthday-hbd.jpg', alt: 'Sinh nhật trên sân khấu' },
             { src: '/home/crowd-fun.jpg', alt: 'Năng lượng đêm' },
             { src: '/home/atmosphere.jpg', alt: 'Không khí Báo Garden' },
