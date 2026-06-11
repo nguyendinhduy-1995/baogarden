@@ -41,7 +41,7 @@ const PRESET_BUTTONS = [
 const EMOTION_CARDS = [
   {
     title: 'Xả Stress',
-    desc: 'Ngồi giữa sân vườn, nghe nhạc, uống bia lạnh – quên hết muộn phiền.',
+    desc: 'Ánh đèn mờ, nhạc vang, bia lạnh trong tay – để đêm cuốn đi mọi muộn phiền.',
     gradient: 'linear-gradient(135deg, rgba(6,182,212,0.15), rgba(6,182,212,0.03))',
     border: 'rgba(6,182,212,0.2)',
     icon: '🍺',
@@ -262,7 +262,7 @@ export default function HomePage() {
             <span className="hp-hero-line3">Niềm Vui Được Nâng Niu</span>
           </h1>
           <p className="hp-hero-sub">
-            Không gian sân vườn sôi động, âm nhạc cuốn hút, món ngon – bia lạnh – bạn bè đủ đầy.
+            Không gian đêm sôi động, âm nhạc cuốn hút, ánh đèn lung linh – bia lạnh – bạn bè đủ đầy.
           </p>
           <div className="hp-hero-badges">
             <span className="hp-hero-badge">Open {HOURS}</span>
@@ -684,7 +684,7 @@ export default function HomePage() {
             <div className="hp-footer-col">
               <h3 className="hp-footer-brand">{BRAND_NAME}</h3>
               <p className="hp-footer-desc">
-                Không gian sân vườn – bar – nhạc sống hàng đầu Tân Phú.
+                Không gian bar – nightlife – nhạc sống hàng đầu Tân Phú.
               </p>
             </div>
             <div className="hp-footer-col">

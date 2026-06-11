@@ -104,7 +104,7 @@ export const DAILY_EVENTS: EventItem[] = [
     day: 'Thứ Bảy',
     dayShort: 'T7',
     name: 'Saturday Night Live',
-    description: 'Đỉnh cao cuối tuần – ca sĩ khách mời, DJ set đặc biệt, vibe sân vườn.',
+    description: 'Đỉnh cao cuối tuần – ca sĩ khách mời, DJ set đặc biệt, năng lượng bất tận.',
     type: 'party',
     time: '20h00 – 03h00',
   },
@@ -214,33 +214,33 @@ export const PROMOTIONS: PromotionItem[] = [
 
 export const SPACES: SpaceItem[] = [
   {
-    name: 'Sân Vườn Trung Tâm',
-    description: 'View sân khấu chính, vibe sôi động nhất Báo Garden.',
+    name: 'Main Hall',
+    description: 'Không gian chính view sân khấu, nơi năng lượng đêm hội tụ.',
     image: '/home/hero.png',
   },
   {
-    name: 'Khu VIP Phòng Riêng',
-    description: 'Không gian riêng tư cho tiệc sinh nhật, họp mặt đặc biệt.',
+    name: 'VIP Lounge',
+    description: 'Phòng riêng tư, ánh sáng mờ ảo – dành cho tiệc sinh nhật, nhóm kín.',
     image: '/home/birthday.png',
   },
   {
     name: 'Sân Khấu & DJ Booth',
-    description: 'Nơi DJ và dancer biểu diễn mỗi đêm, âm thanh đỉnh cao.',
+    description: 'Laser, khói, âm bass rung – nơi DJ biểu diễn mỗi đêm.',
     image: '/home/dj.png',
   },
   {
-    name: 'Khu Chill Ngoài Trời',
-    description: 'Gió mát, đèn vàng, ngồi nhâm nhi bia với bạn bè.',
+    name: 'Lounge Bar',
+    description: 'Ghế da, nến, cocktail – góc trò chuyện riêng giữa đêm dài.',
     image: '/home/chill.png',
   },
   {
-    name: 'Khu A – Gần Phòng Chờ',
-    description: 'Vị trí thuận tiện, thoáng mát, dễ di chuyển.',
+    name: 'Khu Quầy Bar',
+    description: 'Ngồi ngay quầy, xem bartender pha chế, chill với ly bia lạnh.',
     image: '/home/hero.png',
   },
   {
-    name: 'Khu B – Bên Trái',
-    description: 'Yên tĩnh hơn, phù hợp nhóm nhỏ muốn trò chuyện.',
+    name: 'Khu Nhóm Đông',
+    description: 'Bàn dài cho team building, liên hoan – bao trọn một góc đêm.',
     image: '/home/chill.png',
   },
 ];
@@ -270,10 +270,10 @@ export const UPCOMING_EVENTS: UpcomingEvent[] = [
     tag: 'Ladies',
   },
   {
-    title: 'Pool Party – Mùa Hè Bùng Nổ',
+    title: 'Neon Night – Đêm Phát Sáng',
     date: 'Cuối tháng này',
-    time: '15h00 – 23h00',
-    description: 'Sự kiện lớn nhất mùa hè – pool party ngoài trời, bikini, bia tươi.',
+    time: '20h00 – 03h00',
+    description: 'Đêm neon UV đặc biệt – sơn phát sáng, vòng tay neon, laser tím xanh bất tận.',
     tag: 'Sắp tới',
   },
 ];
