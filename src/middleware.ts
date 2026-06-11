@@ -25,7 +25,7 @@ export function middleware(request: NextRequest) {
   }
 
   // Public routes - no auth needed
-  const publicPaths = ['/booking', '/login', '/order', '/api/auth/login', '/api/bookings', '/api/tables', '/api/public'];
+  const publicPaths = ['/booking', '/login', '/order', '/guide', '/api/auth/login', '/api/bookings', '/api/tables', '/api/public', '/api/events'];
   const isPublicPath = publicPaths.some(p => pathname === p || pathname.startsWith(p + '/'));
   
   // Static assets, favicon, etc
