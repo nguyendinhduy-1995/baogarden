@@ -21,6 +21,7 @@ const NAV_ITEMS = [
   { href: '/admin/menu', label: 'Thực đơn', short: 'TĐ', roles: ['ADMIN', 'MANAGER'] },
   { href: '/admin/users', label: 'Nhân viên', short: 'NV', roles: ['ADMIN'] },
   { href: '/admin/reports', label: 'Báo cáo', short: 'BC', roles: ['ADMIN', 'MANAGER'] },
+  { href: '/admin/events', label: 'Sự kiện', short: 'SK', roles: ['ADMIN', 'MANAGER'] },
   { href: '/admin/settings', label: 'Cài đặt', short: 'CĐ', roles: ['ADMIN'] },
 ];
 

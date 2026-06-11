@@ -467,3 +467,44 @@ model ServiceRequest {
 
   @@map("service_requests")
 }
+
+// ==================== EVENTS ====================
+
+model DailyEvent {
+  id          String   @id @default(cuid())
+  dayIndex    Int      // 0=T2, 1=T3, 2=T4, 3=T5, 4=T6, 5=T7, 6=CN
+  dayName     String   // "Thứ Hai", "Thứ Ba"...
+  dayShort    String   // "T2", "T3"...
+  name        String   // "Chill Monday"
+  description String
+  type        String   // chill, ladies, acoustic, dj, party, recovery
+  posterUrl   String?
+  isActive    Boolean  @default(true)
+  updatedAt   DateTime @updatedAt
+  @@map("daily_events")
+}
+
+model WeeklySchedule {
+  id        String   @id @default(cuid())
+  day       String
+  program   String
+  artist    String
+  type      String
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  updatedAt DateTime @updatedAt
+  @@map("weekly_schedules")
+}
+
+model UpcomingEvent {
+  id          String   @id @default(cuid())
+  title       String
+  date        String
+  time        String
+  description String
+  tag         String
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  updatedAt   DateTime @updatedAt
+  @@map("upcoming_events")
+}

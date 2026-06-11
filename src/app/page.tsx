@@ -94,8 +94,41 @@ export default function HomePage() {
   const [todayIdx] = useState(getTodayIndex);
   const [activeDay, setActiveDay] = useState(getTodayIndex);
 
+  // Dynamic data from API (falls back to static)
+  const [dailyEvents, setDailyEvents] = useState(DAILY_EVENTS);
+  const [weeklySchedule, setWeeklySchedule] = useState(WEEKLY_SCHEDULE);
+  const [upcomingEvents, setUpcomingEvents] = useState(UPCOMING_EVENTS);
+
   const heroRef = useRef<HTMLDivElement>(null);
   const observerRefs = useRef<(HTMLElement | null)[]>([]);
+
+  /* ─── Fetch events from API ─── */
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const [dailyRes, weeklyRes, upcomingRes] = await Promise.allSettled([
+          fetch('/api/events/daily'),
+          fetch('/api/events/weekly'),
+          fetch('/api/events/upcoming'),
+        ]);
+        if (dailyRes.status === 'fulfilled' && dailyRes.value.ok) {
+          const data = await dailyRes.value.json();
+          if (data.length > 0) setDailyEvents(data);
+        }
+        if (weeklyRes.status === 'fulfilled' && weeklyRes.value.ok) {
+          const data = await weeklyRes.value.json();
+          if (data.length > 0) setWeeklySchedule(data);
+        }
+        if (upcomingRes.status === 'fulfilled' && upcomingRes.value.ok) {
+          const data = await upcomingRes.value.json();
+          if (data.length > 0) setUpcomingEvents(data);
+        }
+      } catch {
+        // Silently fall back to static data
+      }
+    };
+    fetchEvents();
+  }, []);
 
   /* ─── Scroll listener for header ─── */
   useEffect(() => {
@@ -193,7 +226,7 @@ export default function HomePage() {
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, []);
 
-  const todayEvent = DAILY_EVENTS[activeDay];
+  const todayEvent = dailyEvents[activeDay];
 
   return (
     <div className="hp-root">
@@ -481,7 +514,7 @@ export default function HomePage() {
         <div className="hp-container">
           <h2 className="hp-section-title">Hôm Nay Ở Báo Có Gì?</h2>
           <div className="hp-day-tabs">
-            {DAILY_EVENTS.map((ev, idx) => (
+            {dailyEvents.map((ev, idx) => (
               <button
                 key={ev.day}
                 className={`hp-day-tab ${activeDay === idx ? 'hp-day-tab-active' : ''} ${todayIdx === idx ? 'hp-day-tab-today' : ''}`}
@@ -532,7 +565,7 @@ export default function HomePage() {
                 </tr>
               </thead>
               <tbody>
-                {WEEKLY_SCHEDULE.map((item, i) => (
+                                {weeklySchedule.map((item, i) => (
                   <tr key={i}>
                     <td className="hp-sched-day">{item.day}</td>
                     <td>{item.program}</td>
@@ -553,7 +586,7 @@ export default function HomePage() {
 
           {/* Mobile cards */}
           <div className="hp-schedule-mobile">
-            {WEEKLY_SCHEDULE.map((item, i) => (
+                            {weeklySchedule.map((item, i) => (
               <div key={i} className="hp-sched-card">
                 <div className="hp-sched-card-top">
                   <span className="hp-sched-card-day">{item.day}</span>
@@ -578,7 +611,7 @@ export default function HomePage() {
         <div className="hp-container">
           <h2 className="hp-section-title">Sự Kiện Sắp Diễn Ra</h2>
           <div className="hp-upcoming-grid">
-            {UPCOMING_EVENTS.map((ev) => (
+            {upcomingEvents.map((ev) => (
               <div key={ev.title} className="hp-upcoming-card">
                 <span className="hp-upcoming-tag">{ev.tag}</span>
                 <h3 className="hp-upcoming-title">{ev.title}</h3>
@@ -759,34 +792,71 @@ const CSS = `
 /* ─── Root ─── */
 .hp-root {
   min-height: 100dvh;
-  background: linear-gradient(180deg, #03071a, #06103a, #0a1448, #0d0f2e);
+  background: linear-gradient(180deg, #03071a 0%, #06103a 25%, #0a1448 50%, #0d0f2e 75%, #03071a 100%);
   color: #e8e4f0;
   font-family: 'Inter', -apple-system, sans-serif;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   position: relative;
 }
+
+/* Star field — denser, multi-layer */
 .hp-root::before {
   content: '';
   position: fixed;
   inset: 0;
   background:
-    radial-gradient(1.5px 1.5px at 20% 15%, rgba(212,168,74,0.4) 50%, transparent 100%),
-    radial-gradient(1px 1px at 80% 25%, rgba(255,255,255,0.25) 50%, transparent 100%),
-    radial-gradient(1.5px 1.5px at 55% 60%, rgba(168,130,255,0.3) 50%, transparent 100%),
-    radial-gradient(1px 1px at 35% 80%, rgba(255,255,255,0.2) 50%, transparent 100%),
-    radial-gradient(1px 1px at 90% 70%, rgba(212,168,74,0.35) 50%, transparent 100%),
-    radial-gradient(1.5px 1.5px at 10% 50%, rgba(255,255,255,0.15) 50%, transparent 100%),
-    radial-gradient(1px 1px at 70% 90%, rgba(168,130,255,0.2) 50%, transparent 100%),
-    radial-gradient(1px 1px at 45% 35%, rgba(255,255,255,0.2) 50%, transparent 100%);
-  animation: hp-stars-drift 80s linear infinite;
+    radial-gradient(1.5px 1.5px at 10% 8%, rgba(212,168,74,0.5) 50%, transparent 100%),
+    radial-gradient(1px 1px at 25% 18%, rgba(255,255,255,0.3) 50%, transparent 100%),
+    radial-gradient(2px 2px at 42% 12%, rgba(168,130,255,0.4) 50%, transparent 100%),
+    radial-gradient(1px 1px at 65% 22%, rgba(212,168,74,0.35) 50%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 80% 8%, rgba(255,255,255,0.25) 50%, transparent 100%),
+    radial-gradient(1px 1px at 92% 32%, rgba(168,130,255,0.3) 50%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 15% 45%, rgba(212,168,74,0.4) 50%, transparent 100%),
+    radial-gradient(1px 1px at 35% 55%, rgba(255,255,255,0.2) 50%, transparent 100%),
+    radial-gradient(2px 2px at 55% 48%, rgba(168,130,255,0.35) 50%, transparent 100%),
+    radial-gradient(1px 1px at 72% 60%, rgba(212,168,74,0.3) 50%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 88% 52%, rgba(255,255,255,0.2) 50%, transparent 100%),
+    radial-gradient(1px 1px at 5% 72%, rgba(168,130,255,0.25) 50%, transparent 100%),
+    radial-gradient(1px 1px at 48% 82%, rgba(212,168,74,0.3) 50%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 78% 88%, rgba(255,255,255,0.2) 50%, transparent 100%),
+    radial-gradient(1px 1px at 30% 92%, rgba(168,130,255,0.2) 50%, transparent 100%),
+    radial-gradient(1px 1px at 95% 15%, rgba(212,168,74,0.25) 50%, transparent 100%);
+  animation: hp-stars-drift 60s linear infinite;
   pointer-events: none;
   z-index: 0;
 }
+
+/* Floating gold dust particles */
+.hp-root::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(2px 2px at 20% 30%, rgba(212,168,74,0.15) 50%, transparent 100%),
+    radial-gradient(3px 3px at 60% 20%, rgba(212,168,74,0.08) 50%, transparent 100%),
+    radial-gradient(2px 2px at 85% 50%, rgba(168,130,255,0.1) 50%, transparent 100%),
+    radial-gradient(4px 4px at 40% 70%, rgba(212,168,74,0.06) 50%, transparent 100%),
+    radial-gradient(2px 2px at 70% 85%, rgba(168,130,255,0.08) 50%, transparent 100%);
+  animation: hp-dust-float 40s ease-in-out infinite alternate;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.7;
+}
+
 @keyframes hp-stars-drift {
-  0% { transform: translateY(0); opacity: 0.6; }
-  50% { opacity: 1; }
-  100% { transform: translateY(-30px); opacity: 0.6; }
+  0% { transform: translateY(0) scale(1); opacity: 0.6; }
+  25% { opacity: 0.9; }
+  50% { transform: translateY(-20px) scale(1.02); opacity: 1; }
+  75% { opacity: 0.8; }
+  100% { transform: translateY(-40px) scale(1); opacity: 0.6; }
+}
+
+@keyframes hp-dust-float {
+  0% { transform: translateY(0) translateX(0); }
+  33% { transform: translateY(-15px) translateX(10px); }
+  66% { transform: translateY(-25px) translateX(-5px); }
+  100% { transform: translateY(-10px) translateX(8px); }
 }
 
 /* ─── Animations ─── */
@@ -799,6 +869,7 @@ const CSS = `
   opacity: 1;
   transform: translateY(0);
 }
+
 
 /* ─── Container ─── */
 .hp-container {
@@ -1148,12 +1219,22 @@ const CSS = `
   font-size: 34px;
   font-weight: 700;
   line-height: 1.2;
-  color: #e8e4f0;
   text-align: center;
   margin-bottom: 36px;
-  text-shadow: 0 0 30px rgba(212,168,74,0.08);
   position: relative;
   z-index: 1;
+  background-image: linear-gradient(90deg, #e8e4f0 0%, #D4A84A 30%, #e8e4f0 50%, #a882ff 70%, #e8e4f0 100%);
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: hp-shimmer-title 8s ease-in-out infinite;
+  text-shadow: none;
+}
+@keyframes hp-shimmer-title {
+  0% { background-position: 100% 50%; }
+  50% { background-position: 0% 50%; }
+  100% { background-position: 100% 50%; }
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -1359,6 +1440,24 @@ const CSS = `
    ═══════════════════════════════════════════════════════════════ */
 .hp-emotion {
   padding: 80px 0;
+  position: relative;
+  overflow: hidden;
+}
+.hp-emotion::before {
+  content: '';
+  position: absolute;
+  width: 400px;
+  height: 400px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(120,80,220,0.08) 0%, transparent 70%);
+  top: -100px;
+  right: -100px;
+  pointer-events: none;
+  animation: hp-orb-pulse 6s ease-in-out infinite alternate;
+}
+@keyframes hp-orb-pulse {
+  0% { transform: scale(1); opacity: 0.5; }
+  100% { transform: scale(1.3); opacity: 0.8; }
 }
 .hp-emotion-quote {
   text-align: center;
@@ -1462,6 +1561,23 @@ const CSS = `
   padding: 80px 0;
   position: relative;
   z-index: 1;
+  overflow: hidden;
+}
+.hp-today::before {
+  content: '';
+  position: absolute;
+  width: 500px;
+  height: 500px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(212,168,74,0.06) 0%, transparent 70%);
+  bottom: -150px;
+  left: -150px;
+  pointer-events: none;
+  animation: hp-orb-gold 8s ease-in-out infinite alternate;
+}
+@keyframes hp-orb-gold {
+  0% { transform: scale(1) rotate(0deg); opacity: 0.4; }
+  100% { transform: scale(1.2) rotate(10deg); opacity: 0.7; }
 }
 .hp-day-tabs {
   display: flex;
