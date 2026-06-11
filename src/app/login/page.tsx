@@ -38,6 +38,14 @@ export default function LoginPage() {
         router.push('/booking-staff');
       } else if (role === 'RECEPTION') {
         router.push('/reception');
+      } else if (role === 'WAITER') {
+        router.push('/waiter');
+      } else if (role === 'KITCHEN') {
+        router.push('/kitchen');
+      } else if (role === 'BAR') {
+        router.push('/bar');
+      } else if (role === 'CASHIER') {
+        router.push('/cashier');
       } else {
         router.push('/admin');
       }

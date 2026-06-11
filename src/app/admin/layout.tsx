@@ -18,6 +18,7 @@ const NAV_ITEMS = [
   { href: '/admin/bookings', label: 'Đặt bàn', short: 'ĐB', roles: ['ADMIN', 'MANAGER', 'BOOKING'] },
   { href: '/admin/customers', label: 'Khách hàng', short: 'KH', roles: ['ADMIN', 'MANAGER'] },
   { href: '/admin/tables', label: 'Sơ đồ bàn', short: 'SĐ', roles: ['ADMIN', 'MANAGER'] },
+  { href: '/admin/menu', label: 'Thực đơn', short: 'TĐ', roles: ['ADMIN', 'MANAGER'] },
   { href: '/admin/users', label: 'Nhân viên', short: 'NV', roles: ['ADMIN'] },
   { href: '/admin/reports', label: 'Báo cáo', short: 'BC', roles: ['ADMIN', 'MANAGER'] },
   { href: '/admin/settings', label: 'Cài đặt', short: 'CĐ', roles: ['ADMIN'] },
@@ -28,6 +29,10 @@ const ROLE_LABELS: Record<string, string> = {
   MANAGER: 'Quản lý',
   BOOKING: 'Nhân viên booking',
   RECEPTION: 'Lễ tân',
+  WAITER: 'Phục vụ',
+  KITCHEN: 'Bếp',
+  BAR: 'Bar',
+  CASHIER: 'Thu ngân',
 };
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -71,6 +76,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       const u = data.user as AuthUser;
       if (u.role === 'BOOKING') { router.replace('/booking-staff'); return; }
       if (u.role === 'RECEPTION') { router.replace('/reception'); return; }
+      if (u.role === 'WAITER') { router.replace('/waiter'); return; }
+      if (u.role === 'KITCHEN') { router.replace('/kitchen'); return; }
+      if (u.role === 'BAR') { router.replace('/bar'); return; }
+      if (u.role === 'CASHIER') { router.replace('/cashier'); return; }
       setUser(u);
       setAuthChecked(true);
     } catch {
