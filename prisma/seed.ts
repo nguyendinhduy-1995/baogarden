@@ -286,12 +286,17 @@ async function main() {
 
     const order1 = await prisma.order.create({
       data: {
+        orderCode: 'DEMO-ORD-001',
         tableSessionId: session1.id,
         status: 'PROCESSING',
         source: 'WAITER',
         createdByUserId: userRecords['WAITER'],
       },
     });
+
+    // Get menu item details for snapshots
+    const menuItems = await prisma.menuItem.findMany({ where: { id: { in: menuItemIds } } });
+    const menuMap = new Map(menuItems.map(m => [m.id, m]));
 
     // Add order items in various states
     const orderItems1 = [
@@ -302,10 +307,13 @@ async function main() {
     ];
 
     for (const item of orderItems1) {
+      const mi = menuMap.get(item.menuItemId);
       await prisma.orderItem.create({
         data: {
           orderId: order1.id, menuItemId: item.menuItemId,
-          quantity: item.quantity, unitPrice: item.price,
+          itemNameSnapshot: mi?.name || 'Unknown',
+          priceSnapshot: item.price,
+          quantity: item.quantity, totalPrice: item.price * item.quantity,
           department: item.dept, status: item.status,
         },
       });
@@ -322,6 +330,7 @@ async function main() {
 
     const order2 = await prisma.order.create({
       data: {
+        orderCode: 'DEMO-ORD-002',
         tableSessionId: session2.id,
         status: 'PAYMENT_REQUESTED',
         source: 'WAITER',
@@ -338,10 +347,13 @@ async function main() {
     ];
 
     for (const item of orderItems2) {
+      const mi = menuMap.get(item.menuItemId);
       await prisma.orderItem.create({
         data: {
           orderId: order2.id, menuItemId: item.menuItemId,
-          quantity: item.quantity, unitPrice: item.price,
+          itemNameSnapshot: mi?.name || 'Unknown',
+          priceSnapshot: item.price,
+          quantity: item.quantity, totalPrice: item.price * item.quantity,
           department: item.dept, status: item.status,
         },
       });
