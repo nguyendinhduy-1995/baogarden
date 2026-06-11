@@ -386,9 +386,6 @@ export default function PublicBookingPage() {
                       {isConfirmed && (
                         <span className="bk-cell-status-tag bk-cell-tag-confirmed">✓</span>
                       )}
-                      {b && t.bookingGuestCount && (
-                        <span className="bk-cell-guests">{t.bookingGuestCount}👤</span>
-                      )}
                     </button>
                   );
                 })}
