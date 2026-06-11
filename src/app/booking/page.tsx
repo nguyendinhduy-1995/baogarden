@@ -8,10 +8,18 @@ interface RawTable {
   minGuests: number; maxGuests: number;
   depositAmount: string; minSpend: string; note: string;
   isBooked?: boolean; area?: { name: string };
+  bookingStatus?: string | null;
+  bookingCode?: string | null;
+  bookingCreatedAt?: string | null;
+  bookingGuestCount?: number | null;
 }
 interface Table {
   id: string; code: string; area: string;
   status: 'available' | 'booked' | 'vip';
+  bookingStatus: 'PENDING' | 'CONFIRMED' | 'ARRIVED' | null;
+  bookingCode: string | null;
+  bookingCreatedAt: string | null;
+  bookingGuestCount: number | null;
   minGuests: number; maxGuests: number;
   deposit: number; minSpend: number;
 }
@@ -23,6 +31,8 @@ const AREA_DESC: Record<string,string> = {
   'Khu B': 'Bên trái · Lounge & chill',
   'Khu VIP': 'Phòng VIP · Tiệc đặc biệt',
 };
+
+const PENDING_TIMEOUT_MS = 10 * 60 * 1000; // 10 phút
 
 export default function PublicBookingPage() {
   const today = new Date().toISOString().split('T')[0];
@@ -40,11 +50,17 @@ export default function PublicBookingPage() {
   const [loading, setLoading] = useState(true);
   const [confirmed, setConfirmed] = useState<{code:string;table:string;area:string;date:string;time:string;guests:number;name:string}|null>(null);
   const [activeArea, setActiveArea] = useState('all');
-  const [mapZoom, setMapZoom] = useState(false);
+  const [now, setNow] = useState(Date.now());
   const ctaRef = useRef<HTMLDivElement>(null);
 
   /* step: 1=chọn ngày giờ, 2=chọn bàn, 3=điền thông tin */
   const step = showForm ? 3 : sel ? 2 : 1;
+
+  /* realtime clock for pending countdown */
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const fetchTables = useCallback(async () => {
     setLoading(true);
@@ -55,6 +71,10 @@ export default function PublicBookingPage() {
         setTables(data.data.filter((t: RawTable) => t.status !== 'INACTIVE').map((t: RawTable) => ({
           id: t.id, code: t.code, area: t.area?.name || '',
           status: t.isBooked ? 'booked' as const : t.status === 'VIP' ? 'vip' as const : 'available' as const,
+          bookingStatus: t.bookingStatus as Table['bookingStatus'] || null,
+          bookingCode: t.bookingCode || null,
+          bookingCreatedAt: t.bookingCreatedAt || null,
+          bookingGuestCount: t.bookingGuestCount || null,
           minGuests: t.minGuests, maxGuests: t.maxGuests,
           deposit: Number(t.depositAmount), minSpend: Number(t.minSpend),
         })));
@@ -64,6 +84,12 @@ export default function PublicBookingPage() {
 
   useEffect(() => { fetchTables(); }, [fetchTables]);
   useEffect(() => { setSel(null); }, [date, time]);
+
+  /* Auto-refresh every 30s to keep booking status fresh */
+  useEffect(() => {
+    const interval = setInterval(() => { fetchTables(); }, 30000);
+    return () => clearInterval(interval);
+  }, [fetchTables]);
 
   const grouped = useMemo(() => {
     const g: Record<string, Table[]> = {};
@@ -81,6 +107,8 @@ export default function PublicBookingPage() {
   const filteredAreas = activeArea === 'all' ? areas : areas.filter(a => a === activeArea);
   const avail = tables.filter(t => t.status !== 'booked').length;
   const booked = tables.filter(t => t.status === 'booked').length;
+  const pending = tables.filter(t => t.status === 'booked' && t.bookingStatus === 'PENDING').length;
+  const confirmedCount = tables.filter(t => t.status === 'booked' && t.bookingStatus === 'CONFIRMED').length;
 
   const flash = (msg: string, type: 'error'|'success' = 'error') => {
     setToast({ msg, type }); setTimeout(() => setToast(null), 2500);
@@ -91,6 +119,24 @@ export default function PublicBookingPage() {
     setSel(t);
     flash(`Đã chọn bàn ${t.code}`, 'success');
     setTimeout(() => ctaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }), 100);
+  };
+
+  /* pending countdown helper */
+  const getPendingCountdown = (createdAt: string | null): string => {
+    if (!createdAt) return '';
+    const created = new Date(createdAt).getTime();
+    const remaining = PENDING_TIMEOUT_MS - (now - created);
+    if (remaining <= 0) return 'Hết hạn';
+    const mins = Math.floor(remaining / 60000);
+    const secs = Math.floor((remaining % 60000) / 1000);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const getPendingProgress = (createdAt: string | null): number => {
+    if (!createdAt) return 0;
+    const created = new Date(createdAt).getTime();
+    const elapsed = now - created;
+    return Math.min(100, (elapsed / PENDING_TIMEOUT_MS) * 100);
   };
 
   /* auto-format phone */
@@ -226,10 +272,39 @@ export default function PublicBookingPage() {
             <img src="/home/floorplan.jpg" alt="Sơ đồ bàn Báo Garden" className="bk-fp-img" />
           </div>
         </div>
-        <div className="bk-map-stats">
-          <span className="bk-stat bk-stat-g">{avail} trống</span>
-          <span className="bk-stat-sep">|</span>
-          <span className="bk-stat bk-stat-r">{booked} đã đặt</span>
+        {/* ── Stats bar ── */}
+        <div className="bk-stats-bar">
+          <div className="bk-stat-item bk-stat-avail">
+            <span className="bk-stat-dot bk-dot-green" />
+            <span className="bk-stat-num">{avail}</span>
+            <span className="bk-stat-label">Trống</span>
+          </div>
+          <div className="bk-stat-divider" />
+          <div className="bk-stat-item bk-stat-booked">
+            <span className="bk-stat-dot bk-dot-red" />
+            <span className="bk-stat-num">{booked}</span>
+            <span className="bk-stat-label">Đã đặt</span>
+          </div>
+          {pending > 0 && (
+            <>
+              <div className="bk-stat-divider" />
+              <div className="bk-stat-item bk-stat-pending">
+                <span className="bk-stat-dot bk-dot-orange" />
+                <span className="bk-stat-num">{pending}</span>
+                <span className="bk-stat-label">Đang đợi</span>
+              </div>
+            </>
+          )}
+          {confirmedCount > 0 && (
+            <>
+              <div className="bk-stat-divider" />
+              <div className="bk-stat-item bk-stat-conf">
+                <span className="bk-stat-dot bk-dot-blue" />
+                <span className="bk-stat-num">{confirmedCount}</span>
+                <span className="bk-stat-label">Xác nhận</span>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -245,6 +320,7 @@ export default function PublicBookingPage() {
         <div className="bk-legend">
           <span><i className="bk-led bk-led-g"/>Trống</span>
           <span><i className="bk-led bk-led-r"/>Đã đặt</span>
+          <span><i className="bk-led bk-led-orange"/>Đang đợi</span>
           <span><i className="bk-led bk-led-gold"/>VIP</span>
         </div>
         <div className="bk-area-tabs">
@@ -286,12 +362,30 @@ export default function PublicBookingPage() {
                   const s = sel?.id === t.id;
                   const b = t.status === 'booked';
                   const v = t.status === 'vip';
+                  const isPending = b && t.bookingStatus === 'PENDING';
+                  const isConfirmed = b && t.bookingStatus === 'CONFIRMED';
+                  const countdown = isPending ? getPendingCountdown(t.bookingCreatedAt) : '';
+                  const progress = isPending ? getPendingProgress(t.bookingCreatedAt) : 0;
                   return (
                     <button key={t.id}
-                      className={`bk-cell ${s ? 'bk-cell-sel' : b ? 'bk-cell-bk' : v ? 'bk-cell-vip' : 'bk-cell-ok'}`}
+                      className={`bk-cell ${s ? 'bk-cell-sel' : isPending ? 'bk-cell-pending' : b ? 'bk-cell-bk' : v ? 'bk-cell-vip' : 'bk-cell-ok'}`}
                       onClick={() => pick(t)} disabled={b} id={`table-${t.code}`}>
                       <span className="bk-cell-code">{t.code}</span>
                       {v && !s && <span className="bk-cell-vtag">VIP</span>}
+                      {isPending && (
+                        <div className="bk-cell-timer">
+                          <div className="bk-cell-timer-bar">
+                            <div className="bk-cell-timer-fill" style={{ width: `${100 - progress}%` }} />
+                          </div>
+                          <span className="bk-cell-timer-text">{countdown}</span>
+                        </div>
+                      )}
+                      {isConfirmed && (
+                        <span className="bk-cell-status-tag bk-cell-tag-confirmed">✓</span>
+                      )}
+                      {b && t.bookingGuestCount && (
+                        <span className="bk-cell-guests">{t.bookingGuestCount}👤</span>
+                      )}
                     </button>
                   );
                 })}
@@ -544,10 +638,30 @@ const CSS = `
   width:100%;height:auto;display:block;
   border-radius:12px;
 }
-.bk-map-stats{display:flex;justify-content:center;align-items:center;gap:12px;padding:10px 0 2px}
-.bk-stat{font-size:12px;font-weight:700;letter-spacing:0.02em}
-.bk-stat-g{color:#4ade80}.bk-stat-r{color:#f87171}
-.bk-stat-sep{color:#2a2a35;font-size:10px}
+
+/* ── stats bar ── */
+.bk-stats-bar{
+  display:flex;justify-content:center;align-items:center;gap:0;
+  padding:14px 0 6px;
+}
+.bk-stat-item{
+  display:flex;align-items:center;gap:6px;padding:0 14px;
+}
+.bk-stat-dot{
+  width:8px;height:8px;border-radius:50%;flex-shrink:0;
+}
+.bk-dot-green{background:#22c55e;box-shadow:0 0 8px rgba(34,197,94,0.5)}
+.bk-dot-red{background:#ef4444;box-shadow:0 0 8px rgba(239,68,68,0.5)}
+.bk-dot-orange{background:#f59e0b;box-shadow:0 0 8px rgba(245,158,11,0.5);animation:bk-dot-blink 1.5s ease-in-out infinite}
+.bk-dot-blue{background:#3b82f6;box-shadow:0 0 8px rgba(59,130,246,0.5)}
+@keyframes bk-dot-blink{0%,100%{opacity:1}50%{opacity:0.3}}
+.bk-stat-num{font-size:18px;font-weight:800;letter-spacing:-0.02em}
+.bk-stat-avail .bk-stat-num{color:#4ade80}
+.bk-stat-booked .bk-stat-num{color:#f87171}
+.bk-stat-pending .bk-stat-num{color:#fbbf24}
+.bk-stat-conf .bk-stat-num{color:#60a5fa}
+.bk-stat-label{font-size:10px;color:rgba(226,221,213,0.4);font-weight:600}
+.bk-stat-divider{width:1px;height:24px;background:rgba(255,255,255,0.06)}
 
 /* ── trust ── */
 .bk-trust{
@@ -560,12 +674,13 @@ const CSS = `
 /* ── filter bar ── */
 .bk-filter-bar{padding:0 16px 10px; position:relative; z-index:1}
 .bk-legend{
-  display:flex;justify-content:center;gap:20px;
+  display:flex;justify-content:center;gap:16px;
   padding:0 0 12px;font-size:11px;color:rgba(226,221,213,0.45);font-weight:600;
 }
 .bk-led{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle}
 .bk-led-g{background:#22c55e;box-shadow:0 0 6px rgba(34,197,94,0.5)}
 .bk-led-r{background:#ef4444;box-shadow:0 0 6px rgba(239,68,68,0.5)}
+.bk-led-orange{background:#f59e0b;box-shadow:0 0 6px rgba(245,158,11,0.5)}
 .bk-led-gold{background:#D4A84A;box-shadow:0 0 6px rgba(212,168,74,0.5)}
 
 .bk-area-tabs{
@@ -630,13 +745,14 @@ const CSS = `
 .bk-sec-desc{font-size:10px;color:rgba(212,168,74,0.35);font-weight:600;font-style:italic}
 
 /* ── grid ── */
-.bk-grid{display:grid;grid-template-columns:repeat(auto-fill, minmax(70px, 1fr));gap:8px}
+.bk-grid{display:grid;grid-template-columns:repeat(auto-fill, minmax(78px, 1fr));gap:8px}
 .bk-cell{
-  position:relative;border-radius:14px;padding:16px 4px 14px;text-align:center;
+  position:relative;border-radius:14px;padding:18px 4px 14px;text-align:center;
   border:1.5px solid transparent;cursor:pointer;
   transition:all 0.25s cubic-bezier(0.4,0,0.2,1);
   -webkit-tap-highlight-color:transparent;
   backdrop-filter:blur(4px);
+  min-height:56px;
 }
 .bk-cell:active:not(:disabled){transform:scale(0.92)}
 .bk-cell-code{font-size:15px;font-weight:800;letter-spacing:0.03em;display:block}
@@ -645,6 +761,7 @@ const CSS = `
   color:#D4A84A;letter-spacing:0.12em;opacity:0.6;
 }
 
+/* ── cell: available ── */
 .bk-cell-ok{
   background:linear-gradient(160deg,rgba(34,197,94,0.1),rgba(34,197,94,0.02));
   border-color:rgba(34,197,94,0.18);
@@ -658,15 +775,62 @@ const CSS = `
   transform:translateY(-1px);
 }
 
+/* ── cell: booked (confirmed) — RED, VISIBLE ── */
 .bk-cell-bk{
-  background:rgba(239,68,68,0.04);border-color:rgba(239,68,68,0.1);
-  cursor:not-allowed;opacity:0.35;
+  background:linear-gradient(160deg,rgba(239,68,68,0.12),rgba(239,68,68,0.04));
+  border-color:rgba(239,68,68,0.25);
+  cursor:not-allowed;opacity:1;
 }
 .bk-cell-bk .bk-cell-code{
-  color:#f87171;text-decoration:line-through;
-  text-decoration-thickness:1.5px;text-decoration-color:rgba(239,68,68,0.3);
+  color:#f87171;
 }
 
+/* ── cell: pending — ORANGE with countdown ── */
+.bk-cell-pending{
+  background:linear-gradient(160deg,rgba(245,158,11,0.12),rgba(245,158,11,0.04));
+  border-color:rgba(245,158,11,0.3);
+  cursor:not-allowed;opacity:1;
+  animation:bk-pending-glow 2.5s ease-in-out infinite;
+}
+.bk-cell-pending .bk-cell-code{color:#fbbf24}
+@keyframes bk-pending-glow{
+  0%,100%{border-color:rgba(245,158,11,0.2);box-shadow:0 0 0 rgba(245,158,11,0)}
+  50%{border-color:rgba(245,158,11,0.45);box-shadow:0 0 14px rgba(245,158,11,0.08)}
+}
+
+/* ── cell timer (pending countdown) ── */
+.bk-cell-timer{
+  position:absolute;bottom:3px;left:6px;right:6px;
+}
+.bk-cell-timer-bar{
+  width:100%;height:2px;border-radius:1px;
+  background:rgba(245,158,11,0.1);overflow:hidden;
+}
+.bk-cell-timer-fill{
+  height:100%;border-radius:1px;
+  background:linear-gradient(90deg,#f59e0b,#fbbf24);
+  transition:width 1s linear;
+}
+.bk-cell-timer-text{
+  font-size:8px;font-weight:700;color:rgba(245,158,11,0.6);
+  display:block;margin-top:1px;letter-spacing:0.05em;
+}
+
+/* ── cell status tag ── */
+.bk-cell-status-tag{
+  position:absolute;top:3px;right:4px;
+  font-size:8px;font-weight:800;line-height:1;
+}
+.bk-cell-tag-confirmed{color:rgba(239,68,68,0.6)}
+
+/* ── cell guests count ── */
+.bk-cell-guests{
+  position:absolute;top:3px;left:4px;
+  font-size:7px;font-weight:700;color:rgba(226,221,213,0.3);
+  letter-spacing:0.02em;
+}
+
+/* ── cell: vip ── */
 .bk-cell-vip{
   background:linear-gradient(160deg,rgba(212,168,74,0.12),rgba(212,168,74,0.03));
   border-color:rgba(212,168,74,0.2);
@@ -680,6 +844,7 @@ const CSS = `
   transform:translateY(-1px);
 }
 
+/* ── cell: selected ── */
 .bk-cell-sel{
   background:linear-gradient(160deg,rgba(248,200,90,0.2),rgba(248,200,90,0.06));
   border-color:#E8C464;

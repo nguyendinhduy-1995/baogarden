@@ -39,6 +39,7 @@ export async function GET(request: Request) {
             bookingCode: true,
             status: true,
             guestCount: true,
+            createdAt: true,
             customer: {
               select: {
                 name: true,
@@ -46,15 +47,25 @@ export async function GET(request: Request) {
               },
             },
           },
+          orderBy: { createdAt: 'desc' },
+          take: 1,
         },
       },
       orderBy: [{ area: { name: 'asc' } }, { code: 'asc' }],
     });
 
-    const tablesWithAvailability = tables.map((table) => ({
-      ...table,
-      isAvailable: table.bookings.length === 0,
-    }));
+    const tablesWithAvailability = tables.map((table) => {
+      const activeBooking = table.bookings[0] || null;
+      return {
+        ...table,
+        isAvailable: !activeBooking,
+        isBooked: !!activeBooking,
+        bookingStatus: activeBooking?.status || null,
+        bookingCode: activeBooking?.bookingCode || null,
+        bookingCreatedAt: activeBooking?.createdAt || null,
+        bookingGuestCount: activeBooking?.guestCount || null,
+      };
+    });
 
     return NextResponse.json(
       { success: true, data: tablesWithAvailability },
