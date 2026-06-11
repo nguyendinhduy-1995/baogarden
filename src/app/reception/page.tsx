@@ -9,27 +9,30 @@ interface BookingData {
   guestCount: number; status: string; depositAmount: string; minSpend: string; note: string;
   customer: { name: string; phone: string };
   table: { code: string; area?: { name: string } };
-  createdByUser?: { name: string } | null;
 }
 
-const ST: Record<string, { label: string; color: string; bg: string }> = {
-  PENDING:   { label: 'Chờ xác nhận', color: '#D4A84A', bg: 'rgba(212,168,74,0.1)' },
-  CONFIRMED: { label: 'Đã xác nhận', color: '#60a5fa', bg: 'rgba(96,165,250,0.1)' },
-  ARRIVED:   { label: 'Đã đến', color: '#4ade80', bg: 'rgba(74,222,128,0.1)' },
-  CANCELLED: { label: 'Đã hủy', color: '#f87171', bg: 'rgba(248,113,113,0.08)' },
-  NO_SHOW:   { label: 'Không đến', color: '#6b7280', bg: 'rgba(107,114,128,0.08)' },
-  COMPLETED: { label: 'Hoàn tất', color: '#a78bfa', bg: 'rgba(167,139,250,0.08)' },
+const STATUS: Record<string, { label: string; icon: string; color: string; glow: string }> = {
+  PENDING:   { label: 'Chờ xác nhận', icon: '⏳', color: '#fbbf24', glow: 'rgba(251,191,36,0.15)' },
+  CONFIRMED: { label: 'Đã xác nhận', icon: '✓', color: '#60a5fa', glow: 'rgba(96,165,250,0.15)' },
+  ARRIVED:   { label: 'Đã đến', icon: '🟢', color: '#4ade80', glow: 'rgba(74,222,128,0.15)' },
+  CANCELLED: { label: 'Đã hủy', icon: '✕', color: '#f87171', glow: 'rgba(248,113,113,0.08)' },
+  NO_SHOW:   { label: 'Không đến', icon: '⊘', color: '#6b7280', glow: 'rgba(107,114,128,0.08)' },
+  COMPLETED: { label: 'Hoàn tất', icon: '★', color: '#a78bfa', glow: 'rgba(167,139,250,0.08)' },
 };
+
+type View = 'timeline' | 'status';
 
 export default function ReceptionPage() {
   const router = useRouter();
   const [user, setUser] = useState<UserData | null>(null);
   const [bookings, setBookings] = useState<BookingData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('all');
-  const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
+  const [filter, setFilter] = useState('action');
+  const [toast, setToast] = useState('');
+  const [toastOk, setToastOk] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
-  const [now, setNow] = useState(new Date());
+  const [view, setView] = useState<View>('timeline');
+  const [expandId, setExpandId] = useState<string | null>(null);
 
   useEffect(() => {
     fetch('/api/auth/me').then(r => r.json()).then(d => {
@@ -37,8 +40,6 @@ export default function ReceptionPage() {
       setUser(d.user);
     }).catch(() => router.push('/login'));
   }, [router]);
-
-  useEffect(() => { const t = setInterval(() => setNow(new Date()), 60000); return () => clearInterval(t); }, []);
 
   const fetchBookings = useCallback(async () => {
     setLoading(true);
@@ -51,175 +52,179 @@ export default function ReceptionPage() {
   }, []);
 
   useEffect(() => { fetchBookings(); }, [fetchBookings]);
-  // Auto-refresh every 30s
   useEffect(() => { const t = setInterval(fetchBookings, 30000); return () => clearInterval(t); }, [fetchBookings]);
 
-  const flash = (msg: string, ok = true) => { setToast({ msg, ok }); setTimeout(() => setToast(null), 2500); };
+  const flash = (msg: string, ok = true) => { setToast(msg); setToastOk(ok); setTimeout(() => setToast(''), 2500); };
 
-  const updateStatus = async (id: string, status: string) => {
+  const act = async (id: string, status: string, label: string) => {
     setBusy(id);
     try {
       const res = await fetch(`/api/bookings/${id}/status`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) });
       const data = await res.json();
-      data.success ? (flash('Cập nhật thành công'), fetchBookings()) : flash(data.error || 'Lỗi', false);
-    } catch { flash('Lỗi server', false); }
+      data.success ? (flash(label + ' thành công'), fetchBookings()) : flash(data.error || 'Lỗi', false);
+    } catch { flash('Lỗi kết nối', false); }
     finally { setBusy(null); }
   };
 
   const handleLogout = async () => { await fetch('/api/auth/logout', { method: 'POST' }); router.push('/login'); };
 
-  const filtered = filter === 'all' ? bookings : bookings.filter(b => b.status === filter);
+  // Filter logic
+  const getFiltered = () => {
+    if (filter === 'action') return bookings.filter(b => ['PENDING', 'CONFIRMED', 'ARRIVED'].includes(b.status));
+    if (filter === 'all') return bookings;
+    return bookings.filter(b => b.status === filter);
+  };
+  const filtered = getFiltered().sort((a, b) => a.bookingTime.localeCompare(b.bookingTime));
+
   const pending = bookings.filter(b => b.status === 'PENDING').length;
   const confirmed = bookings.filter(b => b.status === 'CONFIRMED').length;
   const arrived = bookings.filter(b => b.status === 'ARRIVED').length;
-  const totalGuests = bookings.filter(b => !['CANCELLED', 'NO_SHOW'].includes(b.status)).reduce((s, b) => s + b.guestCount, 0);
 
-  // Group by time slots
-  const slots = [
-    { label: 'Chiều tối', range: '18:00 – 19:30', times: ['18:00','18:30','19:00','19:30'] },
-    { label: 'Tối', range: '20:00 – 21:30', times: ['20:00','20:30','21:00','21:30'] },
-    { label: 'Khuya', range: '22:00 – 23:30', times: ['22:00','22:30','23:00','23:30'] },
-    { label: 'Sau nửa đêm', range: '00:00+', times: ['00:00','00:30','01:00','01:30','02:00'] },
-  ];
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+  const dateStr = now.toLocaleDateString('vi-VN', { weekday: 'long', day: 'numeric', month: 'long' });
 
-  const currentHour = now.getHours();
-  const greeting = currentHour < 18 ? 'Chào buổi chiều' : currentHour < 22 ? 'Chào buổi tối' : 'Chào buổi khuya';
-
-  if (!user) return (<><style>{CSS}</style><div className="rc"><div className="rc-spin" /></div></>);
+  if (!user) return (<><style>{CSS}</style><div className="rp-load"><div className="rp-spin" /></div></>);
 
   return (
     <>
       <style>{CSS}</style>
-      <div className="rc">
-        {/* ═══ Header ═══ */}
-        <header className="rc-head">
-          <div className="rc-head-left">
-            <div className="rc-brand">BÁO GARDEN</div>
-            <div className="rc-greet">{greeting}, {user.name}</div>
-          </div>
-          <div className="rc-head-right">
-            <div className="rc-date">
-              {now.toLocaleDateString('vi-VN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-            </div>
-            <div className="rc-head-btns">
-              <button className="rc-icon-btn" onClick={fetchBookings} title="Tải lại">↻</button>
-              <button className="rc-icon-btn rc-icon-out" onClick={handleLogout} title="Đăng xuất">⏻</button>
-            </div>
-          </div>
-        </header>
+      <div className="rp">
 
-        {/* ═══ Stats Strip ═══ */}
-        <div className="rc-strip">
-          <div className="rc-strip-item">
-            <span className="rc-strip-num">{bookings.length}</span>
-            <span className="rc-strip-lab">Tổng</span>
+        {/* ═══ Top Bar ═══ */}
+        <div className="rp-top">
+          <div className="rp-top-left">
+            <div className="rp-logo">BÁO</div>
+            <div className="rp-top-info">
+              <span className="rp-top-time">{timeStr}</span>
+              <span className="rp-top-date">{dateStr}</span>
+            </div>
           </div>
-          <div className="rc-strip-sep" />
-          <div className="rc-strip-item" data-type="pending">
-            <span className="rc-strip-num">{pending}</span>
-            <span className="rc-strip-lab">Chờ XN</span>
-          </div>
-          <div className="rc-strip-sep" />
-          <div className="rc-strip-item" data-type="confirmed">
-            <span className="rc-strip-num">{confirmed}</span>
-            <span className="rc-strip-lab">Đã XN</span>
-          </div>
-          <div className="rc-strip-sep" />
-          <div className="rc-strip-item" data-type="arrived">
-            <span className="rc-strip-num">{arrived}</span>
-            <span className="rc-strip-lab">Đã đến</span>
-          </div>
-          <div className="rc-strip-sep" />
-          <div className="rc-strip-item">
-            <span className="rc-strip-num">{totalGuests}</span>
-            <span className="rc-strip-lab">Khách</span>
+          <div className="rp-top-right">
+            <button className="rp-top-btn" onClick={fetchBookings}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 4v6h6M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
+            </button>
+            <button className="rp-top-btn rp-top-out" onClick={handleLogout}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            </button>
           </div>
         </div>
 
-        {/* ═══ Filter Tabs ═══ */}
-        <div className="rc-filters">
-          {[
-            { key: 'all', label: 'Tất cả' },
-            { key: 'PENDING', label: 'Chờ XN' },
-            { key: 'CONFIRMED', label: 'Đã XN' },
-            { key: 'ARRIVED', label: 'Đã đến' },
-            { key: 'COMPLETED', label: 'Hoàn tất' },
-            { key: 'CANCELLED', label: 'Đã hủy' },
-          ].map(f => (
-            <button key={f.key} className={`rc-ftab ${filter === f.key ? 'rc-ftab-on' : ''}`}
-              onClick={() => setFilter(f.key)}>
-              {f.label}
-            </button>
-          ))}
+        {/* ═══ Status Counters ═══ */}
+        <div className="rp-counters">
+          <button className={`rp-counter ${filter === 'action' ? 'rp-counter-on' : ''}`} onClick={() => setFilter('action')}>
+            <span className="rp-c-num">{bookings.length}</span>
+            <span className="rp-c-lab">Tổng</span>
+          </button>
+          <button className={`rp-counter rp-counter-pending ${filter === 'PENDING' ? 'rp-counter-on' : ''}`} onClick={() => setFilter('PENDING')}>
+            <span className="rp-c-num">{pending}</span>
+            <span className="rp-c-lab">Chờ XN</span>
+            {pending > 0 && <span className="rp-c-pulse" />}
+          </button>
+          <button className={`rp-counter rp-counter-confirmed ${filter === 'CONFIRMED' ? 'rp-counter-on' : ''}`} onClick={() => setFilter('CONFIRMED')}>
+            <span className="rp-c-num">{confirmed}</span>
+            <span className="rp-c-lab">Đã XN</span>
+          </button>
+          <button className={`rp-counter rp-counter-arrived ${filter === 'ARRIVED' ? 'rp-counter-on' : ''}`} onClick={() => setFilter('ARRIVED')}>
+            <span className="rp-c-num">{arrived}</span>
+            <span className="rp-c-lab">Đã đến</span>
+          </button>
+          <button className={`rp-counter ${filter === 'all' ? 'rp-counter-on' : ''}`} onClick={() => setFilter('all')}>
+            <span className="rp-c-num">⋯</span>
+            <span className="rp-c-lab">Tất cả</span>
+          </button>
         </div>
 
         {/* ═══ Booking List ═══ */}
-        <div className="rc-body">
+        <div className="rp-list">
           {loading ? (
-            <div className="rc-center"><div className="rc-spin" /></div>
+            <div className="rp-load"><div className="rp-spin" /></div>
           ) : filtered.length === 0 ? (
-            <div className="rc-empty">
-              <div className="rc-empty-icon">✦</div>
-              <p>Không có booking nào</p>
+            <div className="rp-empty">
+              <div className="rp-empty-i">☑</div>
+              <div className="rp-empty-t">{filter === 'action' ? 'Không có booking cần xử lý' : 'Không có booking nào'}</div>
             </div>
           ) : (
-            slots.map(slot => {
-              const items = filtered.filter(b => slot.times.includes(b.bookingTime))
-                .sort((a, b) => a.bookingTime.localeCompare(b.bookingTime));
-              if (items.length === 0) return null;
+            filtered.map(b => {
+              const s = STATUS[b.status] || STATUS.COMPLETED;
+              const isExpanded = expandId === b.id;
+              const isPending = b.status === 'PENDING';
+              const isConfirmed = b.status === 'CONFIRMED';
+              const isArrived = b.status === 'ARRIVED';
+              const isDone = ['CANCELLED', 'NO_SHOW', 'COMPLETED'].includes(b.status);
+
               return (
-                <div key={slot.label} className="rc-slot">
-                  <div className="rc-slot-head">
-                    <span className="rc-slot-label">{slot.label}</span>
-                    <span className="rc-slot-range">{slot.range}</span>
-                    <span className="rc-slot-count">{items.length}</span>
+                <div key={b.id} className={`rp-card ${isDone ? 'rp-card-done' : ''} ${isPending ? 'rp-card-pending' : ''}`}
+                  style={{ '--card-color': s.color, '--card-glow': s.glow } as React.CSSProperties}>
+
+                  {/* Main Row — always visible */}
+                  <div className="rp-row" onClick={() => setExpandId(isExpanded ? null : b.id)}>
+                    {/* Time */}
+                    <div className="rp-time">{b.bookingTime}</div>
+
+                    {/* Center info */}
+                    <div className="rp-info">
+                      <div className="rp-name">{b.customer.name}</div>
+                      <div className="rp-meta">
+                        <span className="rp-table">{b.table.code}</span>
+                        <span className="rp-guests">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                          {b.guestCount}
+                        </span>
+                        {b.table.area?.name && <span className="rp-area">{b.table.area.name}</span>}
+                      </div>
+                    </div>
+
+                    {/* Status + Primary Action */}
+                    <div className="rp-right">
+                      {isPending && (
+                        <button className="rp-action rp-action-confirm" disabled={busy === b.id}
+                          onClick={e => { e.stopPropagation(); act(b.id, 'CONFIRMED', 'Xác nhận'); }}>
+                          Xác nhận
+                        </button>
+                      )}
+                      {isConfirmed && (
+                        <button className="rp-action rp-action-checkin" disabled={busy === b.id}
+                          onClick={e => { e.stopPropagation(); act(b.id, 'ARRIVED', 'Check-in'); }}>
+                          Check-in
+                        </button>
+                      )}
+                      {isArrived && (
+                        <button className="rp-action rp-action-done" disabled={busy === b.id}
+                          onClick={e => { e.stopPropagation(); act(b.id, 'COMPLETED', 'Hoàn tất'); }}>
+                          Xong
+                        </button>
+                      )}
+                      {isDone && (
+                        <div className="rp-badge" style={{ color: s.color, background: s.glow }}>{s.label}</div>
+                      )}
+                    </div>
                   </div>
-                  <div className="rc-slot-list">
-                    {items.map(b => {
-                      const s = ST[b.status] || ST.COMPLETED;
-                      const isAction = !['CANCELLED', 'NO_SHOW', 'COMPLETED'].includes(b.status);
-                      return (
-                        <div key={b.id} className="rc-card">
-                          <div className="rc-card-top">
-                            <div className="rc-card-time">{b.bookingTime}</div>
-                            <div className="rc-card-table">{b.table.code}</div>
-                            <div className="rc-card-badge" style={{ color: s.color, background: s.bg }}>{s.label}</div>
-                          </div>
 
-                          <div className="rc-card-mid">
-                            <div className="rc-card-name">{b.customer.name}</div>
-                            <a href={`tel:${b.customer.phone}`} className="rc-card-phone">{b.customer.phone}</a>
-                          </div>
-
-                          <div className="rc-card-bot">
-                            <span className="rc-card-guests">{b.guestCount} khách</span>
-                            {b.table.area?.name && <span className="rc-card-area">{b.table.area.name}</span>}
-                            {b.note && <span className="rc-card-note">{b.note}</span>}
-                          </div>
-
-                          {isAction && (
-                            <div className="rc-card-actions">
-                              {b.status === 'PENDING' && (
-                                <>
-                                  <button className="rc-act rc-act-confirm" disabled={busy === b.id} onClick={() => updateStatus(b.id, 'CONFIRMED')}>Xác nhận</button>
-                                  <button className="rc-act rc-act-cancel" disabled={busy === b.id} onClick={() => updateStatus(b.id, 'CANCELLED')}>Hủy</button>
-                                </>
-                              )}
-                              {b.status === 'CONFIRMED' && (
-                                <>
-                                  <button className="rc-act rc-act-checkin" disabled={busy === b.id} onClick={() => updateStatus(b.id, 'ARRIVED')}>Check-in</button>
-                                  <button className="rc-act rc-act-ghost" disabled={busy === b.id} onClick={() => updateStatus(b.id, 'NO_SHOW')}>Không đến</button>
-                                </>
-                              )}
-                              {b.status === 'ARRIVED' && (
-                                <button className="rc-act rc-act-done" disabled={busy === b.id} onClick={() => updateStatus(b.id, 'COMPLETED')}>Hoàn tất</button>
-                              )}
-                            </div>
+                  {/* Expanded Detail */}
+                  {isExpanded && (
+                    <div className="rp-detail">
+                      <div className="rp-detail-row">
+                        <a href={`tel:${b.customer.phone}`} className="rp-phone-btn">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+                          {b.customer.phone}
+                        </a>
+                        {b.note && <span className="rp-note">📝 {b.note}</span>}
+                      </div>
+                      {!isDone && (
+                        <div className="rp-detail-actions">
+                          {isPending && (
+                            <button className="rp-sec-btn rp-sec-cancel" disabled={busy === b.id}
+                              onClick={() => act(b.id, 'CANCELLED', 'Hủy')}>Hủy booking</button>
+                          )}
+                          {isConfirmed && (
+                            <button className="rp-sec-btn rp-sec-noshow" disabled={busy === b.id}
+                              onClick={() => act(b.id, 'NO_SHOW', 'Đánh dấu không đến')}>Không đến</button>
                           )}
                         </div>
-                      );
-                    })}
-                  </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               );
             })
@@ -227,132 +232,137 @@ export default function ReceptionPage() {
         </div>
 
         {/* Toast */}
-        {toast && (
-          <div className={`rc-toast ${toast.ok ? '' : 'rc-toast-err'}`}>
-            <span>{toast.ok ? '✓' : '✕'}</span> {toast.msg}
-          </div>
-        )}
+        {toast && <div className={`rp-toast ${toastOk ? '' : 'rp-toast-err'}`}>{toast}</div>}
       </div>
     </>
   );
 }
 
 const CSS = `
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
-.rc{min-height:100dvh;background:#08080c;color:#e8e6e3;font-family:'Inter',-apple-system,sans-serif;display:flex;flex-direction:column}
+*{box-sizing:border-box}
+.rp{min-height:100dvh;background:#0b0b10;color:#e8e6e3;font-family:'Inter',-apple-system,sans-serif;display:flex;flex-direction:column;-webkit-tap-highlight-color:transparent}
 
-/* Spinner */
-.rc-spin{width:24px;height:24px;border:2px solid rgba(212,168,74,0.3);border-top-color:#D4A84A;border-radius:50%;animation:rspin .7s linear infinite;margin:auto}
-@keyframes rspin{to{transform:rotate(360deg)}}
-.rc-center{display:flex;justify-content:center;padding:80px 0}
+.rp-load{display:flex;align-items:center;justify-content:center;min-height:100dvh;background:#0b0b10}
+.rp-spin{width:28px;height:28px;border:2.5px solid rgba(212,168,74,.2);border-top-color:#D4A84A;border-radius:50%;animation:sp .65s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
 
-/* ═══ Header ═══ */
-.rc-head{display:flex;justify-content:space-between;align-items:center;padding:20px 28px;border-bottom:1px solid rgba(255,255,255,0.04)}
-.rc-head-left{display:flex;flex-direction:column;gap:2px}
-.rc-brand{font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:#D4A84A;letter-spacing:0.04em}
-.rc-greet{font-size:.72rem;color:rgba(255,255,255,0.35);font-weight:400}
-.rc-head-right{display:flex;align-items:center;gap:14px}
-.rc-date{font-size:.72rem;color:rgba(255,255,255,0.3);text-align:right}
-.rc-head-btns{display:flex;gap:6px}
-.rc-icon-btn{width:34px;height:34px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:rgba(255,255,255,0.4);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
-.rc-icon-btn:hover{border-color:rgba(212,168,74,0.3);color:#D4A84A}
-.rc-icon-out:hover{border-color:rgba(239,68,68,0.3);color:#ef4444}
+/* ═══ Top Bar ═══ */
+.rp-top{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;background:linear-gradient(180deg,rgba(212,168,74,.04),transparent);border-bottom:1px solid rgba(255,255,255,.03)}
+.rp-top-left{display:flex;align-items:center;gap:14px}
+.rp-logo{font-size:1.1rem;font-weight:800;color:#D4A84A;letter-spacing:.12em;line-height:1}
+.rp-top-info{display:flex;flex-direction:column}
+.rp-top-time{font-size:.82rem;font-weight:700;color:rgba(255,255,255,.8)}
+.rp-top-date{font-size:.62rem;color:rgba(255,255,255,.25);text-transform:capitalize}
+.rp-top-right{display:flex;gap:8px}
+.rp-top-btn{width:38px;height:38px;border-radius:10px;border:1px solid rgba(255,255,255,.06);background:rgba(255,255,255,.02);color:rgba(255,255,255,.35);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.rp-top-btn:active{transform:scale(.92)}
+.rp-top-btn:hover{border-color:rgba(212,168,74,.25);color:#D4A84A}
+.rp-top-out:hover{border-color:rgba(239,68,68,.25);color:#ef4444}
 
-/* ═══ Stats Strip ═══ */
-.rc-strip{display:flex;align-items:center;justify-content:center;gap:0;padding:16px 28px;border-bottom:1px solid rgba(255,255,255,0.04);background:rgba(255,255,255,0.01)}
-.rc-strip-item{display:flex;flex-direction:column;align-items:center;gap:1px;padding:0 20px}
-.rc-strip-num{font-size:1.4rem;font-weight:700;color:#fff;line-height:1.1}
-.rc-strip-lab{font-size:.6rem;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,0.3);font-weight:500}
-.rc-strip-item[data-type="pending"] .rc-strip-num{color:#D4A84A}
-.rc-strip-item[data-type="confirmed"] .rc-strip-num{color:#60a5fa}
-.rc-strip-item[data-type="arrived"] .rc-strip-num{color:#4ade80}
-.rc-strip-sep{width:1px;height:28px;background:rgba(255,255,255,0.06)}
+/* ═══ Counters ═══ */
+.rp-counters{display:flex;gap:6px;padding:14px 20px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.rp-counters::-webkit-scrollbar{display:none}
+.rp-counter{flex:1;min-width:58px;padding:10px 6px;border-radius:12px;border:1px solid rgba(255,255,255,.04);background:rgba(255,255,255,.015);display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;transition:all .2s;position:relative;font-family:inherit}
+.rp-counter:active{transform:scale(.96)}
+.rp-counter-on{border-color:rgba(212,168,74,.2);background:rgba(212,168,74,.05)}
+.rp-c-num{font-size:1.3rem;font-weight:800;color:rgba(255,255,255,.7);line-height:1.1}
+.rp-c-lab{font-size:.55rem;text-transform:uppercase;letter-spacing:.06em;color:rgba(255,255,255,.25);font-weight:600}
+.rp-counter-pending .rp-c-num{color:#fbbf24}
+.rp-counter-confirmed .rp-c-num{color:#60a5fa}
+.rp-counter-arrived .rp-c-num{color:#4ade80}
+.rp-counter-on .rp-c-num{color:#D4A84A}
+.rp-counter-on.rp-counter-pending .rp-c-num{color:#fbbf24}
+.rp-counter-on.rp-counter-confirmed .rp-c-num{color:#60a5fa}
+.rp-counter-on.rp-counter-arrived .rp-c-num{color:#4ade80}
 
-/* ═══ Filter Tabs ═══ */
-.rc-filters{display:flex;gap:4px;padding:14px 28px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
-.rc-filters::-webkit-scrollbar{display:none}
-.rc-ftab{padding:7px 16px;border-radius:100px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:rgba(255,255,255,0.35);font-size:.72rem;font-weight:500;cursor:pointer;transition:all .2s;white-space:nowrap;font-family:inherit}
-.rc-ftab:hover{border-color:rgba(255,255,255,0.12);color:rgba(255,255,255,0.6)}
-.rc-ftab-on{background:rgba(212,168,74,0.08);border-color:rgba(212,168,74,0.25);color:#D4A84A}
+/* Pulse dot for pending */
+.rp-c-pulse{position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:50%;background:#fbbf24;animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
 
-/* ═══ Body ═══ */
-.rc-body{flex:1;padding:20px 28px;max-width:720px;margin:0 auto;width:100%}
-.rc-empty{text-align:center;padding:60px 20px;color:rgba(255,255,255,0.2)}
-.rc-empty-icon{font-size:24px;margin-bottom:8px;color:rgba(212,168,74,0.3)}
-.rc-empty p{margin:0;font-size:.82rem}
-
-/* ═══ Time Slot ═══ */
-.rc-slot{margin-bottom:28px}
-.rc-slot-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
-.rc-slot-label{font-size:.78rem;font-weight:600;color:rgba(255,255,255,0.5)}
-.rc-slot-range{font-size:.65rem;color:rgba(255,255,255,0.2)}
-.rc-slot-count{margin-left:auto;font-size:.6rem;font-weight:600;color:rgba(212,168,74,0.5);background:rgba(212,168,74,0.06);padding:2px 8px;border-radius:100px}
-.rc-slot-list{display:flex;flex-direction:column;gap:6px}
+/* ═══ List ═══ */
+.rp-list{flex:1;padding:4px 16px 100px;display:flex;flex-direction:column;gap:4px}
+.rp-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 20px;gap:8px}
+.rp-empty-i{font-size:28px;opacity:.2}
+.rp-empty-t{font-size:.82rem;color:rgba(255,255,255,.2)}
 
 /* ═══ Card ═══ */
-.rc-card{padding:16px 18px;border-radius:12px;border:1px solid rgba(255,255,255,0.05);background:rgba(255,255,255,0.018);transition:all .2s}
-.rc-card:hover{border-color:rgba(255,255,255,0.08);background:rgba(255,255,255,0.025)}
+.rp-card{border-radius:14px;border:1px solid rgba(255,255,255,.04);background:rgba(255,255,255,.018);overflow:hidden;transition:all .2s}
+.rp-card:active{transform:scale(.995)}
+.rp-card-pending{border-color:rgba(251,191,36,.12);background:rgba(251,191,36,.03)}
+.rp-card-done{opacity:.5}
 
-.rc-card-top{display:flex;align-items:center;gap:10px}
-.rc-card-time{font-size:1.1rem;font-weight:700;color:#fff;min-width:50px;font-variant-numeric:tabular-nums}
-.rc-card-table{font-size:.82rem;font-weight:700;color:#D4A84A;background:rgba(212,168,74,0.08);padding:2px 10px;border-radius:6px}
-.rc-card-badge{font-size:.65rem;font-weight:600;padding:3px 10px;border-radius:100px;margin-left:auto}
+.rp-row{display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;-webkit-user-select:none;user-select:none}
 
-.rc-card-mid{display:flex;align-items:center;gap:12px;margin-top:8px}
-.rc-card-name{font-size:.88rem;font-weight:500;color:rgba(255,255,255,0.85)}
-.rc-card-phone{font-size:.78rem;color:rgba(255,255,255,0.3);text-decoration:none;transition:color .2s}
-.rc-card-phone:hover{color:#D4A84A}
+/* Time */
+.rp-time{font-size:1.15rem;font-weight:800;color:#fff;min-width:52px;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
 
-.rc-card-bot{display:flex;align-items:center;gap:10px;margin-top:6px;flex-wrap:wrap}
-.rc-card-guests{font-size:.72rem;color:rgba(255,255,255,0.3)}
-.rc-card-area{font-size:.65rem;color:rgba(255,255,255,0.2);padding:1px 8px;border:1px solid rgba(255,255,255,0.06);border-radius:4px}
-.rc-card-note{font-size:.68rem;color:rgba(212,168,74,0.4);font-style:italic;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* Info */
+.rp-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.rp-name{font-size:.88rem;font-weight:600;color:rgba(255,255,255,.88);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rp-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.rp-table{font-size:.72rem;font-weight:700;color:#D4A84A;background:rgba(212,168,74,.1);padding:2px 8px;border-radius:5px}
+.rp-guests{display:flex;align-items:center;gap:3px;font-size:.7rem;color:rgba(255,255,255,.3)}
+.rp-guests svg{opacity:.5}
+.rp-area{font-size:.6rem;color:rgba(255,255,255,.18);font-weight:500}
 
-/* ═══ Actions ═══ */
-.rc-card-actions{display:flex;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.04)}
-.rc-act{padding:7px 18px;border-radius:8px;font-size:.75rem;font-weight:600;cursor:pointer;transition:all .15s;border:1px solid transparent;font-family:inherit}
-.rc-act:disabled{opacity:.4;cursor:not-allowed}
+/* Right side — Primary Action */
+.rp-right{flex-shrink:0}
+.rp-action{padding:8px 20px;border-radius:10px;font-size:.78rem;font-weight:700;cursor:pointer;border:none;transition:all .15s;font-family:inherit;letter-spacing:.01em}
+.rp-action:active{transform:scale(.94)}
+.rp-action:disabled{opacity:.4;pointer-events:none}
 
-.rc-act-confirm{background:rgba(96,165,250,0.1);color:#60a5fa;border-color:rgba(96,165,250,0.15)}
-.rc-act-confirm:hover:not(:disabled){background:rgba(96,165,250,0.18)}
+.rp-action-confirm{background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#000;box-shadow:0 2px 12px rgba(251,191,36,.2)}
+.rp-action-confirm:hover{box-shadow:0 4px 20px rgba(251,191,36,.3)}
 
-.rc-act-checkin{background:rgba(74,222,128,0.1);color:#4ade80;border-color:rgba(74,222,128,0.15)}
-.rc-act-checkin:hover:not(:disabled){background:rgba(74,222,128,0.18)}
+.rp-action-checkin{background:linear-gradient(135deg,#4ade80,#22c55e);color:#000;box-shadow:0 2px 12px rgba(74,222,128,.2)}
+.rp-action-checkin:hover{box-shadow:0 4px 20px rgba(74,222,128,.3)}
 
-.rc-act-done{background:rgba(167,139,250,0.1);color:#a78bfa;border-color:rgba(167,139,250,0.15)}
-.rc-act-done:hover:not(:disabled){background:rgba(167,139,250,0.18)}
+.rp-action-done{background:rgba(167,139,250,.15);color:#a78bfa;border:1px solid rgba(167,139,250,.2)}
+.rp-action-done:hover{background:rgba(167,139,250,.22)}
 
-.rc-act-cancel{background:transparent;color:rgba(255,255,255,0.25);border-color:rgba(255,255,255,0.06)}
-.rc-act-cancel:hover:not(:disabled){color:#f87171;border-color:rgba(248,113,113,0.2)}
+.rp-badge{font-size:.65rem;font-weight:600;padding:4px 10px;border-radius:100px;white-space:nowrap}
 
-.rc-act-ghost{background:transparent;color:rgba(255,255,255,0.25);border-color:rgba(255,255,255,0.06)}
-.rc-act-ghost:hover:not(:disabled){color:rgba(255,255,255,0.5);border-color:rgba(255,255,255,0.1)}
+/* ═══ Expanded Detail ═══ */
+.rp-detail{padding:0 16px 14px;border-top:1px solid rgba(255,255,255,.03);animation:slideDown .2s ease}
+@keyframes slideDown{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+
+.rp-detail-row{display:flex;align-items:center;gap:12px;padding-top:10px;flex-wrap:wrap}
+.rp-phone-btn{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:8px;background:rgba(212,168,74,.08);border:1px solid rgba(212,168,74,.15);color:#D4A84A;font-size:.78rem;font-weight:600;text-decoration:none;transition:all .15s}
+.rp-phone-btn:active{transform:scale(.95)}
+.rp-phone-btn:hover{background:rgba(212,168,74,.14)}
+
+.rp-note{font-size:.72rem;color:rgba(255,255,255,.3);font-style:italic}
+
+.rp-detail-actions{display:flex;gap:8px;margin-top:10px}
+.rp-sec-btn{padding:7px 16px;border-radius:8px;font-size:.72rem;font-weight:600;cursor:pointer;border:1px solid rgba(255,255,255,.06);background:transparent;color:rgba(255,255,255,.3);transition:all .15s;font-family:inherit}
+.rp-sec-btn:active{transform:scale(.95)}
+.rp-sec-btn:disabled{opacity:.3;pointer-events:none}
+.rp-sec-cancel:hover{border-color:rgba(248,113,113,.25);color:#f87171;background:rgba(248,113,113,.06)}
+.rp-sec-noshow:hover{border-color:rgba(107,114,128,.3);color:rgba(255,255,255,.5)}
 
 /* ═══ Toast ═══ */
-.rc-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);padding:10px 24px;border-radius:10px;background:rgba(74,222,128,0.12);border:1px solid rgba(74,222,128,0.2);color:#4ade80;font-size:.78rem;font-weight:600;z-index:100;animation:rtoast .3s ease;backdrop-filter:blur(12px)}
-.rc-toast-err{background:rgba(248,113,113,0.12);border-color:rgba(248,113,113,0.2);color:#f87171}
-@keyframes rtoast{from{opacity:0;transform:translateX(-50%) translateY(8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+.rp-toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);padding:12px 28px;border-radius:12px;background:rgba(17,17,24,.92);border:1px solid rgba(74,222,128,.2);color:#4ade80;font-size:.82rem;font-weight:600;z-index:200;animation:tIn .25s ease;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);box-shadow:0 8px 32px rgba(0,0,0,.4)}
+.rp-toast-err{border-color:rgba(248,113,113,.2);color:#f87171}
+@keyframes tIn{from{opacity:0;transform:translateX(-50%) translateY(12px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
 
 /* ═══ Responsive ═══ */
-@media(max-width:640px){
-  .rc-head{padding:14px 18px;flex-wrap:wrap;gap:8px}
-  .rc-date{display:none}
-  .rc-strip{padding:12px 18px;gap:0}
-  .rc-strip-item{padding:0 12px}
-  .rc-strip-num{font-size:1.1rem}
-  .rc-filters{padding:10px 18px}
-  .rc-body{padding:16px 18px}
-  .rc-card{padding:14px 16px}
-  .rc-card-time{font-size:1rem;min-width:44px}
-  .rc-card-name{font-size:.82rem}
-  .rc-card-actions{flex-wrap:wrap}
-  .rc-act{padding:8px 14px;flex:1;min-width:70px;text-align:center;min-height:38px}
+@media(max-width:480px){
+  .rp-top{padding:12px 16px}
+  .rp-counters{padding:10px 16px;gap:4px}
+  .rp-counter{padding:8px 4px;border-radius:10px;min-width:50px}
+  .rp-c-num{font-size:1.1rem}
+  .rp-list{padding:4px 12px 100px;gap:3px}
+  .rp-row{padding:12px 14px;gap:10px}
+  .rp-time{font-size:1rem;min-width:46px}
+  .rp-name{font-size:.82rem}
+  .rp-action{padding:8px 14px;font-size:.72rem}
 }
 
-@media(max-width:375px){
-  .rc-strip-item{padding:0 8px}
-  .rc-strip-num{font-size:.95rem}
-  .rc-strip-lab{font-size:.55rem}
+@media(min-width:768px){
+  .rp-list{max-width:640px;margin:0 auto;width:100%}
+  .rp-counters{max-width:640px;margin:0 auto;justify-content:center;gap:8px}
+  .rp-counter{flex:0 0 auto;min-width:80px}
 }
 `;
