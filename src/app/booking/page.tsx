@@ -373,12 +373,15 @@ export default function PublicBookingPage() {
                       <span className="bk-cell-code">{t.code}</span>
                       {v && !s && <span className="bk-cell-vtag">VIP</span>}
                       {isPending && (
-                        <div className="bk-cell-timer">
-                          <div className="bk-cell-timer-bar">
-                            <div className="bk-cell-timer-fill" style={{ width: `${100 - progress}%` }} />
+                        <>
+                          <span className="bk-cell-beacon" />
+                          <div className="bk-cell-timer">
+                            <div className="bk-cell-timer-bar">
+                              <div className="bk-cell-timer-fill" style={{ width: `${100 - progress}%` }} />
+                            </div>
+                            <span className="bk-cell-timer-text">{countdown}</span>
                           </div>
-                          <span className="bk-cell-timer-text">{countdown}</span>
-                        </div>
+                        </>
                       )}
                       {isConfirmed && (
                         <span className="bk-cell-status-tag bk-cell-tag-confirmed">✓</span>
@@ -785,17 +788,48 @@ const CSS = `
   color:#f87171;
 }
 
-/* ── cell: pending — ORANGE with countdown ── */
+/* ── cell: pending — YELLOW FLASHING beacon ── */
 .bk-cell-pending{
-  background:linear-gradient(160deg,rgba(245,158,11,0.12),rgba(245,158,11,0.04));
-  border-color:rgba(245,158,11,0.3);
+  background:linear-gradient(160deg,rgba(251,191,36,0.15),rgba(251,191,36,0.05));
+  border-color:rgba(251,191,36,0.5);
   cursor:not-allowed;opacity:1;
-  animation:bk-pending-glow 2.5s ease-in-out infinite;
+  animation:bk-pending-flash 1.5s ease-in-out infinite;
+  position:relative;
 }
 .bk-cell-pending .bk-cell-code{color:#fbbf24}
-@keyframes bk-pending-glow{
-  0%,100%{border-color:rgba(245,158,11,0.2);box-shadow:0 0 0 rgba(245,158,11,0)}
-  50%{border-color:rgba(245,158,11,0.45);box-shadow:0 0 14px rgba(245,158,11,0.08)}
+@keyframes bk-pending-flash{
+  0%,100%{
+    border-color:rgba(251,191,36,0.3);
+    box-shadow:0 0 6px rgba(251,191,36,0.1);
+    background:linear-gradient(160deg,rgba(251,191,36,0.08),rgba(251,191,36,0.02));
+  }
+  50%{
+    border-color:rgba(251,191,36,0.7);
+    box-shadow:0 0 22px rgba(251,191,36,0.25), 0 0 44px rgba(251,191,36,0.08);
+    background:linear-gradient(160deg,rgba(251,191,36,0.22),rgba(251,191,36,0.08));
+  }
+}
+
+/* ── beacon dot (blinking yellow) ── */
+.bk-cell-beacon{
+  position:absolute;top:4px;right:5px;
+  width:8px;height:8px;border-radius:50%;
+  background:#fbbf24;
+  box-shadow:0 0 6px #fbbf24, 0 0 12px rgba(251,191,36,0.4);
+  animation:bk-beacon-blink 1s ease-in-out infinite;
+}
+.bk-cell-beacon::after{
+  content:'';position:absolute;inset:-4px;border-radius:50%;
+  border:2px solid rgba(251,191,36,0.3);
+  animation:bk-beacon-ring 1.5s ease-out infinite;
+}
+@keyframes bk-beacon-blink{
+  0%,100%{opacity:1;transform:scale(1)}
+  50%{opacity:0.3;transform:scale(0.7)}
+}
+@keyframes bk-beacon-ring{
+  0%{transform:scale(1);opacity:0.6}
+  100%{transform:scale(2.2);opacity:0}
 }
 
 /* ── cell timer (pending countdown) ── */
