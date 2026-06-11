@@ -126,7 +126,7 @@ export default function PublicBookingPage() {
     if (!createdAt) return '';
     const created = new Date(createdAt).getTime();
     const remaining = PENDING_TIMEOUT_MS - (now - created);
-    if (remaining <= 0) return 'Hết hạn';
+    if (remaining <= 0) return '';
     const mins = Math.floor(remaining / 60000);
     const secs = Math.floor((remaining % 60000) / 1000);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
