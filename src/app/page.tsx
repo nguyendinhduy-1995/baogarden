@@ -664,7 +664,6 @@ export default function HomePage() {
         <div className="hp-album-grid">
           {[
             { src: '/home/stage-show.jpg', alt: 'DJ & Dancer show' },
-            { src: '/home/food-platter.jpg', alt: 'Đồ ăn thượng hạng' },
             { src: '/home/party-crowd.jpg', alt: 'Birthday party' },
             { src: '/home/hall-overview.jpg', alt: 'Main Hall' },
             { src: '/home/birthday-hbd.jpg', alt: 'Sinh nhật trên sân khấu' },
