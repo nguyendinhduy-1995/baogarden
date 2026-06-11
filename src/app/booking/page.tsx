@@ -208,9 +208,13 @@ export default function PublicBookingPage() {
             </div>
           </div>
         )}
-        <p className="bk-success-sub">
-          Nhân viên sẽ liên hệ xác nhận trong ít phút.
-        </p>
+        <div className="bk-process-notice">
+          <div className="bk-process-icon">📞</div>
+          <div className="bk-process-text">
+            <strong>Bước tiếp theo</strong>
+            <span>Bạn sẽ nhận được cuộc gọi xác nhận từ Báo Garden trong vòng <em>15 phút</em> để giữ bàn cho bạn.</span>
+          </div>
+        </div>
         <button onClick={() => { setSuccess(false); setConfirmed(null); fetchTables(); }} className="bk-gold-btn">Đặt thêm bàn</button>
         <a href="tel:0877766663" className="bk-link-phone">Hotline: 08 777 6666 3</a>
       </div>
@@ -1046,6 +1050,12 @@ const CSS = `
 @keyframes bk-pop{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
 .bk-success-title{font-family:'Playfair Display',serif;font-size:24px;font-weight:700;margin-bottom:16px;color:#e2ddd5}
 .bk-success-sub{font-size:13px;color:#6b7280;margin-bottom:28px;line-height:1.8}
+.bk-process-notice{display:flex;align-items:flex-start;gap:14px;padding:16px 20px;border-radius:12px;background:linear-gradient(135deg,rgba(212,168,74,0.08),rgba(212,168,74,0.03));border:1px solid rgba(212,168,74,0.2);margin-bottom:24px;text-align:left}
+.bk-process-icon{font-size:24px;flex-shrink:0;margin-top:2px}
+.bk-process-text{display:flex;flex-direction:column;gap:4px}
+.bk-process-text strong{font-size:14px;color:#D4A84A;font-weight:700}
+.bk-process-text span{font-size:13px;color:#9ca3af;line-height:1.6}
+.bk-process-text em{color:#D4A84A;font-style:normal;font-weight:700}
 
 /* confirm card */
 .bk-confirm-card{
