@@ -70,13 +70,13 @@ export default function AdminEventsPage() {
     setLoading(true);
     try {
       const [d, w, u] = await Promise.all([
-        fetch('/api/events/daily').then(r => r.json()),
-        fetch('/api/events/weekly').then(r => r.json()),
-        fetch('/api/events/upcoming').then(r => r.json()),
+        fetch('/api/events/daily?admin=1').then(r => r.json()),
+        fetch('/api/events/weekly?admin=1').then(r => r.json()),
+        fetch('/api/events/upcoming?admin=1').then(r => r.json()),
       ]);
-      setDailyEvents(d);
-      setWeeklySchedule(w);
-      setUpcomingEvents(u);
+      setDailyEvents(d.data || d || []);
+      setWeeklySchedule(w.data || w || []);
+      setUpcomingEvents(u.data || u || []);
     } catch (e) {
       console.error('Failed to fetch events:', e);
     }
