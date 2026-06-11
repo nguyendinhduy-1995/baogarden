@@ -33,7 +33,7 @@ async function main() {
     const note = type === 'VIP' ? randomPick(NOTES_VIP) : type === 'RETURNING' ? randomPick(NOTES_RETURNING) : type === 'BLACKLIST' ? 'Gây rối/vi phạm nội quy' : undefined;
 
     const c = await prisma.customer.create({
-      data: { name, phone, customerType: type as any, note, visitCount: type === 'VIP' ? randomInt(10, 30) : type === 'RETURNING' ? randomInt(3, 9) : randomInt(0, 2), totalSpent: type === 'VIP' ? randomInt(5000000, 20000000) : type === 'RETURNING' ? randomInt(1000000, 5000000) : randomInt(0, 500000) },
+      data: { name, phone, customerType: type as any, note },
     });
     allCustomerIds.push(c.id);
     newCustCount++;
