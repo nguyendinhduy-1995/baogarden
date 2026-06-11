@@ -476,7 +476,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ═══ 6. TODAY EVENTS ═══ */}
+      {/* ═══ 6. TODAY EVENTS – POSTER ═══ */}
       <section className="hp-today hp-animate" id="events">
         <div className="hp-container">
           <h2 className="hp-section-title">Hôm Nay Ở Báo Có Gì?</h2>
@@ -493,19 +493,24 @@ export default function HomePage() {
             ))}
           </div>
           {todayEvent && (
-            <div
-              className="hp-today-card"
-              style={{ borderColor: EVENT_TYPE_COLORS[todayEvent.type] || '#D4A84A' }}
-            >
-              <div className="hp-today-tag" style={{ background: EVENT_TYPE_COLORS[todayEvent.type] || '#D4A84A' }}>
-                {todayEvent.name}
+            <div className="hp-poster-wrap">
+              <img
+                src={`/home/posters/${todayEvent.dayShort.toLowerCase()}.jpg`}
+                alt={todayEvent.name}
+                className="hp-poster-img"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+              />
+              <div className="hp-poster-fallback">
+                <div className="hp-today-tag" style={{ background: EVENT_TYPE_COLORS[todayEvent.type] || '#D4A84A' }}>
+                  {todayEvent.name}
+                </div>
+                <h3 className="hp-today-title">{todayEvent.day}</h3>
+                <p className="hp-today-time">{todayEvent.time}</p>
+                <p className="hp-today-desc">{todayEvent.description}</p>
+                <Link href="/booking" className="hp-btn-gold hp-btn-sm">
+                  {todayIdx === activeDay ? 'Đặt Bàn Cho Đêm Nay' : 'Đặt Bàn'}
+                </Link>
               </div>
-              <h3 className="hp-today-title">{todayEvent.day}</h3>
-              <p className="hp-today-time">{todayEvent.time}</p>
-              <p className="hp-today-desc">{todayEvent.description}</p>
-              <Link href="/booking" className="hp-btn-gold hp-btn-sm">
-                {todayIdx === activeDay ? 'Đặt Bàn Cho Đêm Nay' : 'Đặt Bàn'}
-              </Link>
             </div>
           )}
         </div>
@@ -522,7 +527,6 @@ export default function HomePage() {
               <thead>
                 <tr>
                   <th>Ngày</th>
-                  <th>Giờ</th>
                   <th>Chương trình</th>
                   <th>Nghệ sĩ</th>
                   <th></th>
@@ -532,7 +536,6 @@ export default function HomePage() {
                 {WEEKLY_SCHEDULE.map((item, i) => (
                   <tr key={i}>
                     <td className="hp-sched-day">{item.day}</td>
-                    <td className="hp-sched-time">{item.time}</td>
                     <td>{item.program}</td>
                     <td className="hp-sched-artist">{item.artist}</td>
                     <td>
@@ -559,7 +562,6 @@ export default function HomePage() {
                 </div>
                 <div className="hp-sched-card-program">{item.program}</div>
                 <div className="hp-sched-card-artist">{item.artist}</div>
-                <div className="hp-sched-card-time">{item.time}</div>
                 <Link
                   href={`/booking?note=${encodeURIComponent(item.program + ' - ' + item.day)}`}
                   className="hp-sched-card-cta"
