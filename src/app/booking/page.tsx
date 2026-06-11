@@ -16,13 +16,12 @@ interface Table {
   deposit: number; minSpend: number;
 }
 
-const AREA_ORDER = ['Khu T','Khu A','Khu B','VIP 1','VIP 2'];
+const AREA_ORDER = ['Sảnh chính','Khu Lounge','Khu VIP','Khu Bar'];
 const AREA_DESC: Record<string,string> = {
-  'Khu T': 'Trung tâm · View sân khấu',
-  'Khu A': 'Bên phải · Gần phòng chờ',
-  'Khu B': 'Bên trái · Thoáng mát',
-  'VIP 1': 'Phòng riêng · Phía dưới',
-  'VIP 2': 'Bên trái',
+  'Sảnh chính': 'View sân khấu · Năng lượng đỉnh cao',
+  'Khu Lounge': 'Ghế da · Không gian chill',
+  'Khu VIP': 'Phòng riêng · Tiệc đặc biệt',
+  'Khu Bar': 'Ngồi quầy · Cocktail & bia',
 };
 
 export default function PublicBookingPage() {
@@ -219,11 +218,52 @@ export default function PublicBookingPage() {
         </div>
       </div>
 
-      {/* ── Floor Plan ── */}
+      {/* ── Floor Plan (Visual) ── */}
       <div className="bk-map-wrap">
-        <div className={`bk-map-frame ${mapZoom ? 'bk-map-zoom' : ''}`} onClick={() => setMapZoom(!mapZoom)}>
-          <img src="/floor-plan-3d.jpg" alt="Sơ đồ bàn Báo Garden" draggable={false} loading="lazy" />
-          {!mapZoom && <div className="bk-map-tap">Nhấn để phóng to</div>}
+        <div className="bk-floorplan">
+          <div className="bk-fp-label">Sơ đồ tổng quan</div>
+          <div className="bk-fp-stage">SÂN KHẤU · DJ BOOTH</div>
+          <div className="bk-fp-areas">
+            <div className="bk-fp-area">
+              <span className="bk-fp-area-name">Sảnh chính</span>
+              <div className="bk-fp-dots">
+                {tables.filter(t => t.area === 'Sảnh chính').map(t => (
+                  <span key={t.id} className={`bk-fp-dot ${t.status === 'booked' ? 'bk-fp-bk' : sel?.id === t.id ? 'bk-fp-sel' : 'bk-fp-ok'}`}
+                    onClick={() => pick(t)} title={t.code}>{t.code.replace('A','')}</span>
+                ))}
+              </div>
+            </div>
+            <div className="bk-fp-row2">
+              <div className="bk-fp-area bk-fp-area-sm">
+                <span className="bk-fp-area-name">Khu Lounge</span>
+                <div className="bk-fp-dots">
+                  {tables.filter(t => t.area === 'Khu Lounge').map(t => (
+                    <span key={t.id} className={`bk-fp-dot ${t.status === 'booked' ? 'bk-fp-bk' : sel?.id === t.id ? 'bk-fp-sel' : 'bk-fp-ok'}`}
+                      onClick={() => pick(t)} title={t.code}>{t.code.replace('B','')}</span>
+                  ))}
+                </div>
+              </div>
+              <div className="bk-fp-area bk-fp-area-sm bk-fp-area-bar">
+                <span className="bk-fp-area-name">Khu Bar</span>
+                <div className="bk-fp-dots">
+                  {tables.filter(t => t.area === 'Khu Bar').map(t => (
+                    <span key={t.id} className={`bk-fp-dot bk-fp-dot-bar ${t.status === 'booked' ? 'bk-fp-bk' : sel?.id === t.id ? 'bk-fp-sel' : 'bk-fp-ok'}`}
+                      onClick={() => pick(t)} title={t.code}>{t.code.replace('BAR','')}</span>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="bk-fp-area bk-fp-area-vip">
+              <span className="bk-fp-area-name">Khu VIP</span>
+              <div className="bk-fp-dots">
+                {tables.filter(t => t.area === 'Khu VIP').map(t => (
+                  <span key={t.id} className={`bk-fp-dot bk-fp-dot-vip ${t.status === 'booked' ? 'bk-fp-bk' : sel?.id === t.id ? 'bk-fp-sel' : 'bk-fp-ok'}`}
+                    onClick={() => pick(t)} title={t.code}>{t.code.replace('VIP','')}</span>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="bk-fp-entrance">LỐI VÀO</div>
         </div>
         <div className="bk-map-stats">
           <span className="bk-stat bk-stat-g">{avail} trống</span>
@@ -487,20 +527,72 @@ const CSS = `
 
 /* ── map ── */
 .bk-map-wrap{padding:0 16px;margin-bottom:4px}
-.bk-map-frame{
-  position:relative;border-radius:16px;overflow:hidden;
-  border:1px solid rgba(212,168,74,0.1);cursor:pointer;
-  box-shadow:0 2px 0 rgba(212,168,74,0.06),0 12px 40px rgba(0,0,0,0.5),inset 0 1px 0 rgba(212,168,74,0.06);
-  transition:all 0.3s;
+.bk-floorplan{
+  border-radius:16px;overflow:hidden;
+  border:1px solid rgba(212,168,74,0.15);
+  background:linear-gradient(180deg,rgba(6,18,64,0.6),rgba(4,8,30,0.9));
+  padding:16px;position:relative;
 }
-.bk-map-frame img{width:100%;height:auto;display:block;transition:transform 0.3s}
-.bk-map-zoom{position:fixed;inset:0;z-index:200;border-radius:0;border:none;display:flex;align-items:center;background:#04060a}
-.bk-map-zoom img{width:100%;height:auto;object-fit:contain}
-.bk-map-tap{
-  position:absolute;bottom:8px;left:50%;transform:translateX(-50%);
-  padding:4px 12px;border-radius:20px;font-size:9px;font-weight:600;
-  background:rgba(0,0,0,0.6);color:#9ca3af;backdrop-filter:blur(4px);
-  letter-spacing:0.03em;pointer-events:none;
+.bk-fp-label{
+  text-align:center;font-size:9px;font-weight:600;
+  letter-spacing:0.15em;color:rgba(212,168,74,0.4);
+  text-transform:uppercase;margin-bottom:12px;
+}
+.bk-fp-stage{
+  text-align:center;padding:10px;margin-bottom:14px;
+  border-radius:10px;font-size:11px;font-weight:700;
+  letter-spacing:0.1em;color:#D4A84A;
+  background:linear-gradient(180deg,rgba(212,168,74,0.12),rgba(212,168,74,0.04));
+  border:1px solid rgba(212,168,74,0.15);
+}
+.bk-fp-areas{display:flex;flex-direction:column;gap:10px}
+.bk-fp-area{
+  padding:12px;border-radius:12px;
+  background:rgba(255,255,255,0.03);
+  border:1px solid rgba(255,255,255,0.06);
+}
+.bk-fp-area-sm{flex:1}
+.bk-fp-area-bar{border-color:rgba(96,165,250,0.15);background:rgba(96,165,250,0.03)}
+.bk-fp-area-vip{border-color:rgba(212,168,74,0.15);background:rgba(212,168,74,0.04)}
+.bk-fp-area-name{
+  display:block;text-align:center;font-size:10px;font-weight:700;
+  color:rgba(226,221,213,0.5);letter-spacing:0.06em;margin-bottom:8px;
+  text-transform:uppercase;
+}
+.bk-fp-row2{display:flex;gap:10px}
+.bk-fp-dots{display:flex;flex-wrap:wrap;justify-content:center;gap:6px}
+.bk-fp-dot{
+  width:34px;height:34px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;cursor:pointer;
+  transition:all 0.15s;border:1.5px solid transparent;
+}
+.bk-fp-ok{
+  background:rgba(74,222,128,0.1);color:#4ade80;
+  border-color:rgba(74,222,128,0.25);
+}
+.bk-fp-ok:hover{background:rgba(74,222,128,0.2);transform:scale(1.1)}
+.bk-fp-bk{
+  background:rgba(248,113,113,0.08);color:rgba(248,113,113,0.4);
+  border-color:rgba(248,113,113,0.12);cursor:not-allowed;opacity:0.5;
+}
+.bk-fp-sel{
+  background:rgba(212,168,74,0.2);color:#D4A84A;
+  border-color:#D4A84A;box-shadow:0 0 12px rgba(212,168,74,0.25);
+  transform:scale(1.12);
+}
+.bk-fp-dot-vip.bk-fp-ok{
+  background:rgba(212,168,74,0.08);color:#D4A84A;
+  border-color:rgba(212,168,74,0.2);
+}
+.bk-fp-dot-bar.bk-fp-ok{
+  background:rgba(96,165,250,0.08);color:#60a5fa;
+  border-color:rgba(96,165,250,0.2);
+}
+.bk-fp-entrance{
+  text-align:center;margin-top:12px;font-size:9px;font-weight:700;
+  letter-spacing:0.2em;color:rgba(226,221,213,0.25);
+  padding:6px;border-top:1px dashed rgba(255,255,255,0.06);
 }
 .bk-map-stats{display:flex;justify-content:center;align-items:center;gap:12px;padding:10px 0 2px}
 .bk-stat{font-size:12px;font-weight:700;letter-spacing:0.02em}
