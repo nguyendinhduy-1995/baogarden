@@ -44,21 +44,18 @@ const EMOTION_CARDS = [
     desc: 'Ánh đèn mờ, nhạc vang, bia lạnh trong tay – để đêm cuốn đi mọi muộn phiền.',
     gradient: 'linear-gradient(135deg, rgba(6,182,212,0.15), rgba(6,182,212,0.03))',
     border: 'rgba(6,182,212,0.2)',
-    icon: '🍺',
   },
   {
     title: 'Sinh Nhật Đáng Nhớ',
     desc: 'Bánh kem, MC, DJ, cả sân khấu – tất cả chỉ cho ngày đặc biệt của bạn.',
     gradient: 'linear-gradient(135deg, rgba(168,85,247,0.15), rgba(168,85,247,0.03))',
     border: 'rgba(168,85,247,0.2)',
-    icon: '🎂',
   },
   {
     title: 'Tiệc Tùng Bùng Nổ',
     desc: 'DJ, dancer, laser – năng lượng cao, kỷ niệm sâu, chơi hết mình.',
     gradient: 'linear-gradient(135deg, rgba(212,168,74,0.15), rgba(212,168,74,0.03))',
     border: 'rgba(212,168,74,0.2)',
-    icon: '🎉',
   },
 ];
 
@@ -283,28 +280,24 @@ export default function HomePage() {
       <section className="hp-quickinfo hp-animate">
         <div className="hp-quickinfo-grid">
           <div className="hp-qi-card">
-            <span className="hp-qi-icon">◷</span>
             <div>
               <div className="hp-qi-label">Mở cửa</div>
               <div className="hp-qi-value">{HOURS}</div>
             </div>
           </div>
           <a href={`tel:${HOTLINE_RAW}`} className="hp-qi-card hp-qi-card-link">
-            <span className="hp-qi-icon">✆</span>
             <div>
               <div className="hp-qi-label">Hotline</div>
               <div className="hp-qi-value">{HOTLINE}</div>
             </div>
           </a>
           <a href={GOOGLE_MAPS_URL} target="_blank" rel="noopener noreferrer" className="hp-qi-card hp-qi-card-link">
-            <span className="hp-qi-icon">⊕</span>
             <div>
               <div className="hp-qi-label">Địa chỉ</div>
               <div className="hp-qi-value">118–120 Tân Sơn Nhì</div>
             </div>
           </a>
           <div className="hp-qi-card hp-qi-card-promo">
-            <span className="hp-qi-icon">★</span>
             <div>
               <div className="hp-qi-label">Ưu đãi</div>
               <div className="hp-qi-value">Đặt trước 20h nhận ưu đãi</div>
@@ -452,9 +445,8 @@ export default function HomePage() {
               <div
                 key={card.title}
                 className="hp-emotion-card"
-                style={{ background: card.gradient, borderColor: card.border }}
+                style={{ background: card.gradient, borderColor: card.border } as React.CSSProperties}
               >
-                <span className="hp-emotion-icon">{card.icon}</span>
                 <h3 className="hp-emotion-card-title">{card.title}</h3>
                 <p className="hp-emotion-card-desc">{card.desc}</p>
               </div>
@@ -717,15 +709,12 @@ export default function HomePage() {
       {/* ═══ STICKY MOBILE BAR ═══ */}
       <div className="hp-mobile-bar">
         <a href={`tel:${HOTLINE_RAW}`} className="hp-mbar-btn hp-mbar-call">
-          <span className="hp-mbar-icon">✆</span>
           <span>Gọi Ngay</span>
         </a>
         <Link href="/booking" className="hp-mbar-btn hp-mbar-book">
-          <span className="hp-mbar-icon">◈</span>
           <span>Đặt Bàn</span>
         </Link>
         <a href={GOOGLE_MAPS_URL} target="_blank" rel="noopener noreferrer" className="hp-mbar-btn hp-mbar-map">
-          <span className="hp-mbar-icon">⊕</span>
           <span>Bản Đồ</span>
         </a>
       </div>
@@ -793,7 +782,7 @@ const CSS = `
   justify-content: space-between;
 }
 .hp-logo {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Cinzel', serif;
   font-size: 24px;
   font-weight: 800;
   color: #D4A84A;
@@ -950,7 +939,7 @@ const CSS = `
   max-width: 720px;
 }
 .hp-hero-title {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Cinzel', serif;
   font-weight: 800;
   line-height: 1.2;
   margin-bottom: 20px;
@@ -1089,7 +1078,7 @@ const CSS = `
 
 /* ─── Section Title ─── */
 .hp-section-title {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Cinzel', serif;
   font-size: 32px;
   font-weight: 700;
   line-height: 1.2;
@@ -1117,8 +1106,8 @@ const CSS = `
 .hp-qi-card {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 20px;
+  justify-content: center;
+  padding: 20px 16px;
   border-radius: 16px;
   background: rgba(255, 255, 255, 0.06);
   backdrop-filter: blur(12px);
@@ -1127,6 +1116,7 @@ const CSS = `
   transition: all 0.2s;
   text-decoration: none;
   color: inherit;
+  text-align: center;
 }
 .hp-qi-card-link:hover {
   border-color: rgba(212, 168, 74, 0.3);
@@ -1136,18 +1126,7 @@ const CSS = `
   border-color: rgba(212, 168, 74, 0.15);
   background: rgba(212, 168, 74, 0.04);
 }
-.hp-qi-icon {
-  font-size: 20px;
-  color: #D4A84A;
-  flex-shrink: 0;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 10px;
-  background: rgba(212, 168, 74, 0.08);
-}
+
 .hp-qi-label {
   font-size: 11px;
   color: rgba(226, 221, 213, 0.5);
@@ -1292,7 +1271,7 @@ const CSS = `
   box-shadow: 0 0 40px rgba(74, 222, 128, 0.2);
 }
 .hp-booking-success h3 {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Cinzel', serif;
   font-size: 22px;
   font-weight: 700;
   margin-bottom: 12px;
@@ -1316,7 +1295,7 @@ const CSS = `
   font-style: italic;
   color: rgba(212, 168, 74, 0.7);
   margin-bottom: 40px;
-  font-family: 'Playfair Display', serif;
+  font-family: 'Cinzel', serif;
   line-height: 1.5;
 }
 .hp-emotion-grid {
@@ -1335,13 +1314,9 @@ const CSS = `
   transform: translateY(-4px);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
 }
-.hp-emotion-icon {
-  font-size: 36px;
-  display: block;
-  margin-bottom: 16px;
-}
+
 .hp-emotion-card-title {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Cinzel', serif;
   font-size: 20px;
   font-weight: 700;
   margin-bottom: 12px;
@@ -1395,7 +1370,7 @@ const CSS = `
   padding: 20px;
 }
 .hp-space-name {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Cinzel', serif;
   font-size: 18px;
   font-weight: 700;
   color: #e2ddd5;
@@ -1475,7 +1450,7 @@ const CSS = `
   margin-bottom: 16px;
 }
 .hp-today-title {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Cinzel', serif;
   font-size: 24px;
   font-weight: 700;
   margin-bottom: 8px;
@@ -1654,7 +1629,7 @@ const CSS = `
   margin-bottom: 12px;
 }
 .hp-upcoming-title {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Cinzel', serif;
   font-size: 18px;
   font-weight: 700;
   margin-bottom: 8px;
@@ -1699,7 +1674,7 @@ const CSS = `
   transform: translateY(-4px);
 }
 .hp-party-title {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Cinzel', serif;
   font-size: 18px;
   font-weight: 700;
   color: #D4A84A;
@@ -1762,7 +1737,7 @@ const CSS = `
   transform: translateY(-2px);
 }
 .hp-promo-title {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Cinzel', serif;
   font-size: 17px;
   font-weight: 700;
   color: #D4A84A;
@@ -1838,7 +1813,7 @@ const CSS = `
   margin-bottom: 40px;
 }
 .hp-footer-brand {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Cinzel', serif;
   font-size: 24px;
   font-weight: 800;
   color: #D4A84A;
@@ -1902,18 +1877,16 @@ const CSS = `
 .hp-mbar-btn {
   flex: 1;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: 0;
   text-decoration: none;
-  font-size: 10px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: 'Cinzel', serif;
+  letter-spacing: 0.05em;
   transition: color 0.15s;
   min-height: 48px;
-}
-.hp-mbar-icon {
-  font-size: 18px;
 }
 .hp-mbar-call { color: #4ade80; }
 .hp-mbar-book { color: #D4A84A; }
