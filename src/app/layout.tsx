@@ -21,6 +21,21 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@400;500;600;700;800&display=swap&subset=vietnamese" rel="stylesheet" />
       </head>
       <body>
+        <div style={{
+          background: 'linear-gradient(90deg, #f59e0b, #d97706)',
+          color: '#000',
+          textAlign: 'center',
+          padding: '8px 16px',
+          fontSize: '14px',
+          fontWeight: 600,
+          letterSpacing: '0.5px',
+          position: 'sticky',
+          top: 0,
+          zIndex: 99999,
+          boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+        }}>
+          ⚠️ Đây là dữ liệu demo để test App
+        </div>
         {children}
       </body>
     </html>
