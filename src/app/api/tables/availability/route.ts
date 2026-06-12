@@ -4,13 +4,8 @@ import { getUserFromRequest } from '@/lib/auth';
 
 export async function GET(request: Request) {
   try {
+    // Auth is optional — public booking page uses this endpoint
     const currentUser = await getUserFromRequest(request);
-    if (!currentUser) {
-      return NextResponse.json(
-        { success: false, error: 'Chưa đăng nhập' },
-        { status: 401 }
-      );
-    }
 
     const { searchParams } = new URL(request.url);
     const date = searchParams.get('date');
@@ -65,12 +60,15 @@ export async function GET(request: Request) {
 
     const tablesWithAvailability = tables.map((table) => {
       const activeBooking = table.bookings[0] || null;
+      // Strip customer PII for unauthenticated requests
+      const { bookings, ...tableData } = table;
       return {
-        ...table,
+        ...tableData,
+        bookings: currentUser ? bookings : [],
         isAvailable: !activeBooking,
         isBooked: !!activeBooking,
         bookingStatus: activeBooking?.status || null,
-        bookingCode: activeBooking?.bookingCode || null,
+        bookingCode: currentUser ? (activeBooking?.bookingCode || null) : null,
         bookingCreatedAt: activeBooking?.createdAt || null,
         bookingGuestCount: activeBooking?.guestCount || null,
       };
