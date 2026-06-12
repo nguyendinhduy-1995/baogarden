@@ -25,14 +25,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           background: 'linear-gradient(90deg, #f59e0b, #d97706)',
           color: '#000',
           textAlign: 'center',
-          padding: '8px 16px',
-          fontSize: '14px',
+          padding: '6px 16px',
+          fontSize: '13px',
           fontWeight: 600,
           letterSpacing: '0.5px',
-          position: 'sticky',
-          top: 0,
+          position: 'relative',
           zIndex: 99999,
-          boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
         }}>
           ⚠️ Đây là dữ liệu demo để test App
         </div>
