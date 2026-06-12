@@ -4,8 +4,8 @@ import { getUserFromRequest, requireRole } from '@/lib/auth';
 
 export async function GET(request: Request) {
   try {
-    const { searchParams } = new URL(request.url);
-    const isAdmin = searchParams.get('admin') === '1';
+    const currentUser = await getUserFromRequest(request);
+    const isAdmin = currentUser ? requireRole(currentUser.role, ['ADMIN', 'MANAGER']) : false;
     const dailyEvents = await prisma.dailyEvent.findMany({
       where: isAdmin ? {} : { isActive: true },
       orderBy: { dayIndex: 'asc' },

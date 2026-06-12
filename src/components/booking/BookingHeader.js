@@ -1,5 +1,7 @@
 'use client';
 
+import { HOTLINE_RAW } from '@/lib/home-data';
+
 export default function BookingHeader({ onMenuClick }) {
   return (
     <header className="sticky top-0 z-50 bg-[#05070B]/90 backdrop-blur-md border-b border-white/5">
@@ -30,7 +32,7 @@ export default function BookingHeader({ onMenuClick }) {
 
         {/* Phone */}
         <a
-          href="tel:+84"
+          href={`tel:${HOTLINE_RAW}`}
           aria-label="Gọi điện"
           className="flex items-center justify-center w-10 h-10 rounded-xl
                      bg-white/5 text-white/70 hover:text-[#D4A84A] hover:bg-white/10

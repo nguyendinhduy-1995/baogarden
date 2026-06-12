@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { HOTLINE, HOTLINE_RAW, ADDRESS } from '@/lib/home-data';
 
 /* ─── Section Data ── */
 interface Section {
@@ -471,8 +472,8 @@ export default function GuidePage() {
       <footer className="gd-footer">
         <div className="gd-footer-brand">BÁO GARDEN</div>
         <p>Hệ thống quản lý vận hành nhà hàng & bar</p>
-        <a href="tel:0877766663" className="gd-footer-phone">📞 Hotline: 08 777 6666 3</a>
-        <p className="gd-footer-addr">118-120 Tân Sơn Nhì, Tân Phú, TP.HCM</p>
+        <a href={`tel:${HOTLINE_RAW}`} className="gd-footer-phone">📞 Hotline: {HOTLINE}</a>
+        <p className="gd-footer-addr">{ADDRESS}</p>
       </footer>
     </div>
   );

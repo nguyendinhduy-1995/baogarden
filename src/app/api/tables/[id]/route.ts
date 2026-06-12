@@ -72,13 +72,21 @@ export async function PATCH(
     if (name && typeof name === 'string') updateData.name = name.trim();
     if (areaId) updateData.areaId = areaId;
     if (status) updateData.status = status;
-    if (minGuests != null) updateData.minGuests = Number(minGuests);
-    if (maxGuests != null) updateData.maxGuests = Number(maxGuests);
-    if (depositAmount != null) updateData.depositAmount = Number(depositAmount);
-    if (minSpend != null) updateData.minSpend = Number(minSpend);
+
+    const numericFields = { minGuests, maxGuests, depositAmount, minSpend, posX, posY };
+    for (const [key, val] of Object.entries(numericFields)) {
+      if (val != null) {
+        if (isNaN(Number(val))) {
+          return NextResponse.json(
+            { success: false, error: `Trường ${key} không hợp lệ` },
+            { status: 400 }
+          );
+        }
+        updateData[key] = Number(val);
+      }
+    }
+
     if (note !== undefined) updateData.note = note?.trim() || null;
-    if (posX != null) updateData.posX = Number(posX);
-    if (posY != null) updateData.posY = Number(posY);
     if (width != null) updateData.width = Number(width);
     if (height != null) updateData.height = Number(height);
 

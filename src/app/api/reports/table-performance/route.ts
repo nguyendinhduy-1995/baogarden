@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { getUserFromRequest } from '@/lib/auth';
+import { getUserFromRequest, requireRole } from '@/lib/auth';
 
 export async function GET(request: Request) {
   try {
@@ -9,6 +9,13 @@ export async function GET(request: Request) {
       return NextResponse.json(
         { success: false, error: 'Chưa đăng nhập' },
         { status: 401 }
+      );
+    }
+
+    if (!requireRole(currentUser.role, ['ADMIN', 'MANAGER'])) {
+      return NextResponse.json(
+        { success: false, error: 'Không có quyền truy cập' },
+        { status: 403 }
       );
     }
 

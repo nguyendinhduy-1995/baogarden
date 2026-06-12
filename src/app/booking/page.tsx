@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect, useMemo, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { HOTLINE, HOTLINE_RAW } from '@/lib/home-data';
 
 /* ─── Types ── */
 interface RawTable {
@@ -133,9 +134,19 @@ function BookingContent() {
   const pending = tables.filter(t => t.status === 'booked' && t.bookingStatus === 'PENDING').length;
   const confirmedCount = tables.filter(t => t.status === 'booked' && t.bookingStatus === 'CONFIRMED').length;
 
+  const toastTimer = useRef<ReturnType<typeof setTimeout>>(null);
+
   const flash = (msg: string, type: 'error'|'success' = 'error') => {
-    setToast({ msg, type }); setTimeout(() => setToast(null), 2500);
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    setToast({ msg, type });
+    toastTimer.current = setTimeout(() => setToast(null), 2500);
   };
+
+  useEffect(() => {
+    return () => {
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+    };
+  }, []);
   const pick = (t: Table) => {
     if (t.status === 'booked') { flash('Bàn này đã được đặt'); return; }
     if (sel?.id === t.id) { setSel(null); return; }
@@ -176,6 +187,10 @@ function BookingContent() {
     const rawPhone = form.phone.replace(/\s/g, '');
     if (!/^0\d{9}$/.test(rawPhone)) { flash('Số điện thoại không hợp lệ'); return; }
     if (!guests || guests < 1) { flash('Vui lòng nhập số khách'); return; }
+    if (guests < sel.minGuests || guests > sel.maxGuests) {
+      flash(`Bàn ${sel.code} chỉ phù hợp ${sel.minGuests}–${sel.maxGuests} khách`);
+      return;
+    }
     setSubmitting(true);
     try {
       const res = await fetch('/api/bookings', {
@@ -239,7 +254,7 @@ function BookingContent() {
           </div>
         </div>
         <button onClick={() => { setSuccess(false); setConfirmed(null); fetchTables(); }} className="bk-gold-btn">Đặt thêm bàn</button>
-        <a href="tel:0877766663" className="bk-link-phone">Hotline: 08 777 6666 3</a>
+        <a href={`tel:${HOTLINE_RAW}`} className="bk-link-phone">Hotline: {HOTLINE}</a>
       </div>
     </div>
   );

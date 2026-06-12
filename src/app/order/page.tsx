@@ -67,11 +67,19 @@ export default function OrderPage() {
 
   const tableCodeRef = useRef('');
   const tokenRef = useRef('');
+  const toastTimer = useRef<ReturnType<typeof setTimeout>>(null);
 
   const showToast = (msg: string) => {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
     setToast(msg);
-    setTimeout(() => setToast(''), 2500);
+    toastTimer.current = setTimeout(() => setToast(''), 2500);
   };
+
+  useEffect(() => {
+    return () => {
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+    };
+  }, []);
 
   // Load menu
   useEffect(() => {
@@ -183,13 +191,13 @@ export default function OrderPage() {
         body: JSON.stringify({ tableCode: tableCodeRef.current, token: tokenRef.current, items }),
       });
       const data = await res.json();
-      if (!data.success) { alert(data.error || 'Gửi order thất bại'); return; }
+      if (!data.success) { showToast(data.error || 'Gửi order thất bại'); return; }
       setOrderCode(data.data.orderCode);
       setCart(new Map());
       setShowCart(false);
       setView('success');
     } catch {
-      alert('Lỗi kết nối, vui lòng thử lại');
+      showToast('Lỗi kết nối, vui lòng thử lại');
     } finally {
       setSubmitting(false);
     }
@@ -206,8 +214,8 @@ export default function OrderPage() {
       });
       const data = await res.json();
       if (data.success) { setServiceDone(prev => new Set(prev).add(type)); }
-      else { alert(data.error || 'Gửi yêu cầu thất bại'); }
-    } catch { alert('Lỗi kết nối'); }
+      else { showToast(data.error || 'Gửi yêu cầu thất bại'); }
+    } catch { showToast('Lỗi kết nối'); }
     finally { setServiceLoading(''); }
   };
 

@@ -71,6 +71,21 @@ export async function POST(
     );
     const discount = discountAmount != null ? Number(discountAmount) : 0;
     const service = serviceCharge != null ? Number(serviceCharge) : 0;
+
+    if (isNaN(discount)) {
+      return NextResponse.json(
+        { success: false, error: 'Số tiền giảm giá không hợp lệ' },
+        { status: 400 }
+      );
+    }
+
+    if (isNaN(service)) {
+      return NextResponse.json(
+        { success: false, error: 'Phí dịch vụ không hợp lệ' },
+        { status: 400 }
+      );
+    }
+
     const totalAmount = subtotal - discount + service;
 
     const result = await prisma.$transaction(async (tx) => {

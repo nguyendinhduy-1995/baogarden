@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 
 // ==================== TYPES ====================
 interface OrderItemData {
@@ -62,6 +63,7 @@ function playBeep() {
     gain.gain.value = 0.3;
     osc.start();
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+    osc.onended = () => ctx.close();
     osc.stop(ctx.currentTime + 0.3);
   } catch { /* silent fail */ }
 }
@@ -85,12 +87,14 @@ function LiveClock() {
 
 // ==================== COMPONENT ====================
 export default function BarPage() {
+  const router = useRouter();
   const [items, setItems] = useState<OrderItemData[]>([]);
   const [areas, setAreas] = useState<AreaData[]>([]);
   const [areaFilter, setAreaFilter] = useState('');
   const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState(false);
   const [updatingId, setUpdatingId] = useState('');
+  const [statusError, setStatusError] = useState('');
   const prevPendingCount = useRef(0);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
 
@@ -98,12 +102,13 @@ export default function BarPage() {
     try {
       const url = areaFilter ? `/api/bar/orders?area=${encodeURIComponent(areaFilter)}` : '/api/bar/orders';
       const res = await fetch(url);
-      const data = await res.json();
 
       if (res.status === 403) {
         setAuthError(true);
         return;
       }
+
+      const data = await res.json();
 
       if (data.success) {
         const newItems = data.data.items as OrderItemData[];
@@ -129,9 +134,9 @@ export default function BarPage() {
 
   useEffect(() => {
     if (authError) {
-      window.location.href = '/login';
+      router.replace('/login');
     }
-  }, [authError]);
+  }, [authError, router]);
 
   const updateStatus = async (itemId: string, newStatus: string) => {
     if (updatingId) return;
@@ -144,12 +149,13 @@ export default function BarPage() {
       });
       const data = await res.json();
       if (data.success) {
+        setStatusError('');
         await fetchData();
       } else {
-        alert(data.error || 'Cập nhật thất bại');
+        setStatusError(data.error || 'Cập nhật thất bại');
       }
     } catch {
-      alert('Lỗi kết nối');
+      setStatusError('Lỗi kết nối');
     } finally {
       setUpdatingId('');
     }
@@ -187,6 +193,7 @@ export default function BarPage() {
     <>
       <style>{BR_CSS}</style>
       <div className="br-page">
+        {statusError && <div style={{position:'fixed',top:12,left:'50%',transform:'translateX(-50%)',zIndex:999,padding:'10px 24px',borderRadius:12,background:'#2a1515ee',border:'1px solid rgba(239,68,68,0.3)',color:'#f87171',fontSize:13,fontWeight:600,backdropFilter:'blur(8px)',whiteSpace:'nowrap'}} onClick={() => setStatusError('')}>{statusError}</div>}
         {/* Header */}
         <header className="br-header">
           <div className="br-header-left">

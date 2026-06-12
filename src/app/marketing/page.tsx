@@ -56,6 +56,13 @@ export default function MarketingPage() {
   const [editId, setEditId] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState<Record<string, string>>({});
+  const [mkToast, setMkToast] = useState('');
+  const [confirmDialog, setConfirmDialog] = useState<{ endpoint: string; id: string } | null>(null);
+
+  const showMkToast = (msg: string) => {
+    setMkToast(msg);
+    setTimeout(() => setMkToast(''), 3000);
+  };
 
   // Auth check
   useEffect(() => {
@@ -90,13 +97,18 @@ export default function MarketingPage() {
     const url = id ? `${endpoint}/${id}` : endpoint;
     const res = await fetch(url, { method: id ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     if (res.ok) { setEditId(null); setShowAdd(false); setForm({}); await fetchAll(); }
-    else { const data = await res.json(); alert(data.error || 'Có lỗi xảy ra'); }
+    else { const data = await res.json(); showMkToast(data.error || 'Có lỗi xảy ra'); }
   };
 
   const handleDelete = async (endpoint: string, id: string) => {
-    if (!confirm('Bạn có chắc muốn xóa?')) return;
-    const res = await fetch(`${endpoint}/${id}`, { method: 'DELETE' });
+    setConfirmDialog({ endpoint, id });
+  };
+
+  const confirmDelete = async () => {
+    if (!confirmDialog) return;
+    const res = await fetch(`${confirmDialog.endpoint}/${confirmDialog.id}`, { method: 'DELETE' });
     if (res.ok) await fetchAll();
+    setConfirmDialog(null);
   };
 
   const handleToggle = async (endpoint: string, id: string, isActive: boolean) => {
@@ -320,7 +332,7 @@ export default function MarketingPage() {
                   <textarea className="mk-textarea" placeholder="Mô tả" value={form.description || ''} onChange={e => setForm({...form, description: e.target.value})} />
                   <button className="mk-btn-save" onClick={() => {
                     const day = DAYS[Number(form.dayIndex)];
-                    if (!day || !form.name || !form.type || !form.description) { alert('Vui lòng điền đầy đủ'); return; }
+                    if (!day || !form.name || !form.type || !form.description) { showMkToast('Vui lòng điền đầy đủ'); return; }
                     handleSave('/api/events/daily', null, { dayIndex: day.index, dayName: day.name, dayShort: day.short, name: form.name, description: form.description, type: form.type, posterUrl: form.posterUrl || null });
                   }}>Lưu</button>
                 </div>
@@ -383,7 +395,7 @@ export default function MarketingPage() {
                     <input className="mk-input" placeholder="Thứ tự" type="number" value={form.sortOrder || ''} onChange={e => setForm({...form, sortOrder: e.target.value})} />
                   </div>
                   <button className="mk-btn-save" onClick={() => {
-                    if (!form.day || !form.program || !form.artist || !form.type) { alert('Vui lòng điền đầy đủ'); return; }
+                    if (!form.day || !form.program || !form.artist || !form.type) { showMkToast('Vui lòng điền đầy đủ'); return; }
                     handleSave('/api/events/weekly', null, { day: form.day, program: form.program, artist: form.artist, type: form.type, sortOrder: Number(form.sortOrder || 0) });
                   }}>Lưu</button>
                 </div>
@@ -443,7 +455,7 @@ export default function MarketingPage() {
                   </div>
                   <textarea className="mk-textarea" placeholder="Mô tả" value={form.description || ''} onChange={e => setForm({...form, description: e.target.value})} />
                   <button className="mk-btn-save" onClick={() => {
-                    if (!form.title || !form.date || !form.time || !form.tag || !form.description) { alert('Vui lòng điền đầy đủ'); return; }
+                    if (!form.title || !form.date || !form.time || !form.tag || !form.description) { showMkToast('Vui lòng điền đầy đủ'); return; }
                     handleSave('/api/events/upcoming', null, { title: form.title, date: form.date, time: form.time, tag: form.tag, description: form.description, sortOrder: Number(form.sortOrder || 0) });
                   }}>Lưu</button>
                 </div>
@@ -485,6 +497,25 @@ export default function MarketingPage() {
             </div>
           )}
         </>
+      )}
+
+      {/* Toast */}
+      {mkToast && (
+        <div style={{position:'fixed',bottom:24,left:'50%',transform:'translateX(-50%)',zIndex:9999,padding:'12px 28px',borderRadius:12,background:'rgba(220,38,38,0.9)',color:'#fff',fontSize:'0.85rem',fontWeight:600,backdropFilter:'blur(8px)',boxShadow:'0 8px 32px rgba(0,0,0,0.4)',whiteSpace:'nowrap'}} onClick={() => setMkToast('')}>{mkToast}</div>
+      )}
+
+      {/* Confirm Dialog */}
+      {confirmDialog && (
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',backdropFilter:'blur(8px)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999,padding:20}} onClick={() => setConfirmDialog(null)}>
+          <div style={{background:'#1a1a2e',border:'1px solid rgba(255,255,255,0.1)',borderRadius:16,padding:24,maxWidth:360,width:'100%',textAlign:'center'}} onClick={e => e.stopPropagation()}>
+            <p style={{fontSize:'1rem',fontWeight:600,color:'#e8e6e3',marginBottom:8}}>Xác nhận xóa?</p>
+            <p style={{fontSize:'0.85rem',color:'rgba(255,255,255,0.5)',marginBottom:20}}>Hành động này không thể hoàn tác.</p>
+            <div style={{display:'flex',gap:10,justifyContent:'center'}}>
+              <button onClick={() => setConfirmDialog(null)} style={{padding:'10px 24px',borderRadius:10,border:'1px solid rgba(255,255,255,0.1)',background:'transparent',color:'rgba(255,255,255,0.6)',cursor:'pointer',fontSize:'0.82rem',fontWeight:600}}>Hủy</button>
+              <button onClick={confirmDelete} style={{padding:'10px 24px',borderRadius:10,border:'none',background:'#ef4444',color:'#fff',cursor:'pointer',fontSize:'0.82rem',fontWeight:700}}>Xóa</button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

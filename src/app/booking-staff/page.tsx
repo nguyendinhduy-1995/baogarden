@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 
 
@@ -788,7 +788,7 @@ export default function BookingStaffPage() {
     fetch('/api/auth/me')
       .then(r => r.json())
       .then(data => {
-        if (!data.success || data.user.role !== 'BOOKING') {
+        if (!data.success || !['BOOKING', 'ADMIN', 'MANAGER', 'STAFF'].includes(data.user.role)) {
           router.push('/login');
           return;
         }
@@ -827,6 +827,12 @@ export default function BookingStaffPage() {
 
   useEffect(() => { fetchBookings(); }, [fetchBookings]);
 
+  // Auto-refresh every 30s
+  useEffect(() => {
+    const interval = setInterval(fetchBookings, 30000);
+    return () => clearInterval(interval);
+  }, [fetchBookings]);
+
   // Fetch available tables
   const fetchTables = useCallback(async () => {
     try {
@@ -838,14 +844,28 @@ export default function BookingStaffPage() {
 
   useEffect(() => { if (showForm) fetchTables(); }, [showForm, fetchTables]);
 
+  const toastTimer = useRef<ReturnType<typeof setTimeout>>(null);
+
   const showToast = (message: string, type = 'success') => {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
     setToast({ message, type });
-    setTimeout(() => setToast(null), 3000);
+    toastTimer.current = setTimeout(() => setToast(null), 3000);
   };
+
+  useEffect(() => {
+    return () => {
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+    };
+  }, []);
 
   const handleSubmit = async () => {
     if (!formData.customerName.trim() || !formData.customerPhone.trim() || !formData.tableId) {
       showToast('Vui lòng nhập đầy đủ thông tin', 'error');
+      return;
+    }
+    const rawPhone = formData.customerPhone.replace(/\s/g, '');
+    if (!/^0\d{9,10}$/.test(rawPhone)) {
+      showToast('Số điện thoại không hợp lệ (VD: 0901234567)', 'error');
       return;
     }
     setSubmitting(true);
@@ -933,7 +953,7 @@ export default function BookingStaffPage() {
 
         {/* Quick Stats */}
         <div className="bs-quick-stats">
-          <span className="bs-badge bs-badge-gold">Chờ: {stats.confirmed - stats.arrived > 0 ? bookings.filter(b => b.status === 'PENDING').length : 0}</span>
+          <span className="bs-badge bs-badge-gold">Chờ: {bookings.filter(b => b.status === 'PENDING').length}</span>
           <span className="bs-badge bs-badge-red">Hủy: {stats.cancelled}</span>
           <span className="bs-badge bs-badge-gray">Không đến: {stats.noShow}</span>
         </div>
@@ -1057,6 +1077,7 @@ export default function BookingStaffPage() {
               <button onClick={() => setShowForm(false)} className="bs-modal-close" id="close-staff-form">✕</button>
             </div>
             <div className="bs-modal-body">
+              <form onSubmit={e => { e.preventDefault(); handleSubmit(); }}>
               <div className="bs-form-stack">
                 <div className="bs-form-row">
                   <div className="bs-form-group">
@@ -1111,6 +1132,7 @@ export default function BookingStaffPage() {
                   <textarea className="bs-textarea" value={formData.note} onChange={e => setFormData(p => ({ ...p, note: e.target.value }))} placeholder="Ghi chú..." rows={2} id="staff-note" />
                 </div>
               </div>
+              </form>
             </div>
             <div className="bs-modal-footer">
               <button onClick={() => setShowForm(false)} className="bs-btn bs-btn-secondary">Hủy</button>

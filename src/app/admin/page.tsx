@@ -75,6 +75,8 @@ export default function AdminDashboard() {
   const [activityLog, setActivityLog] = useState<Array<{ id: string; type: string; note: string | null; createdAt: string; user: { name: string } | null; booking: { bookingCode: string; customer: { name: string } | null } | null }>>([]);
 
   const loadData = useCallback(async () => {
+    let todayBookingsCount = 0;
+    let todayExpectedRevenue = 0;
     try {
       const today = new Date().toISOString().split('T')[0];
       const [statsRes, bookingsRes] = await Promise.all([
@@ -85,15 +87,17 @@ export default function AdminDashboard() {
         const statsData = await statsRes.json();
         if (statsData.success && statsData.data) {
           const d = statsData.data;
+          todayBookingsCount = d.totalBookings || 0;
+          todayExpectedRevenue = d.estimatedRevenue || 0;
           setStats({
-            todayBookings: d.totalBookings || 0,
+            todayBookings: todayBookingsCount,
             pendingCount: d.byStatus?.PENDING || 0,
             confirmedCount: d.byStatus?.CONFIRMED || 0,
             arrivedCount: (d.byStatus?.ARRIVED || 0) + (d.byStatus?.COMPLETED || 0),
             cancelledCount: d.byStatus?.CANCELLED || 0,
             completedCount: d.byStatus?.COMPLETED || 0,
             noShowCount: d.byStatus?.NO_SHOW || 0,
-            expectedRevenue: d.estimatedRevenue || 0,
+            expectedRevenue: todayExpectedRevenue,
             bookingSuccessRate: d.arrivalRate || 0,
             arrivalRate: d.arrivalRate || 0,
             topUsers: (d.topBookingUsers || []).map((u: { user?: { id: string; name: string }; bookingCount: number }) => ({
@@ -133,8 +137,8 @@ export default function AdminDashboard() {
           const avg = Math.round(d7.data.totalBookings / 7);
           const avgRev = d7.data.totalRevenue ? Math.round(d7.data.totalRevenue / 7) : 0;
           days.forEach((d, i) => {
-            d.count = i === 6 ? (stats?.todayBookings || 0) : Math.max(0, avg + Math.round((Math.random() - 0.5) * avg * 0.4));
-            d.revenue = i === 6 ? (stats?.expectedRevenue || 0) : Math.max(0, avgRev + Math.round((Math.random() - 0.5) * avgRev * 0.3));
+            d.count = i === 6 ? todayBookingsCount : Math.max(0, avg + Math.round((Math.random() - 0.5) * avg * 0.4));
+            d.revenue = i === 6 ? todayExpectedRevenue : Math.max(0, avgRev + Math.round((Math.random() - 0.5) * avgRev * 0.3));
           });
         }
       }

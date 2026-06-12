@@ -2,12 +2,19 @@ import { NextResponse } from 'next/server';
 import { clearAuthCookie } from '@/lib/auth';
 
 export async function POST() {
-  const response = NextResponse.json(
-    { success: true },
-    { status: 200 }
-  );
+  try {
+    const response = NextResponse.json(
+      { success: true },
+      { status: 200 }
+    );
 
-  response.headers.set('Set-Cookie', clearAuthCookie());
+    response.headers.set('Set-Cookie', clearAuthCookie());
 
-  return response;
+    return response;
+  } catch {
+    return NextResponse.json(
+      { success: false, error: 'Đã xảy ra lỗi server' },
+      { status: 500 }
+    );
+  }
 }

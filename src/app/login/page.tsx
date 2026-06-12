@@ -2,6 +2,7 @@
 
 import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
+import { BRAND_NAME, HOTLINE } from '@/lib/home-data';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -132,7 +133,7 @@ export default function LoginPage() {
         <a href="/booking" className="lg-back">← Quay lại trang đặt bàn</a>
 
         {/* Footer */}
-        <p className="lg-footer">Báo Garden · 08 777 6666 3</p>
+        <p className="lg-footer">{BRAND_NAME} · {HOTLINE}</p>
       </div>
     </div>
   );

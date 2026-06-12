@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { BRAND_NAME, HOTLINE } from '@/lib/home-data';
 
 /* ─── Types ─── */
 interface AuthUser { id: string; name: string; role: string }
@@ -195,7 +196,7 @@ ${paymentData.discountAmount > 0 ? `<div class="row"><span>Giảm giá:</span><s
 ${paymentData.serviceCharge > 0 ? `<div class="row"><span>Phí dịch vụ:</span><span>+${fmtMoney(paymentData.serviceCharge)}</span></div>` : ''}
 <div class="row bold total"><span>TỔNG CỘNG:</span><span>${fmtMoney(paymentData.totalAmount)}</span></div>
 <div class="row"><span>Thanh toán:</span><span>${methodLabel}</span></div>
-<hr><p class="center">Cảm ơn quý khách!</p><p class="center" style="font-size:10px">Báo Garden · 08 777 6666 3</p>
+<hr><p class="center">Cảm ơn quý khách!</p><p class="center" style="font-size:10px">${BRAND_NAME} · ${HOTLINE}</p>
 <script>window.onload=function(){window.print()}</script>
 </body></html>`;
     const w = window.open('', '_blank');
@@ -344,6 +345,7 @@ ${paymentData.serviceCharge > 0 ? `<div class="row"><span>Phí dịch vụ:</spa
 
             {/* Modal body */}
             <div className="c-modal__body">
+              <form onSubmit={e => { e.preventDefault(); handlePay(); }}>
               {/* Orders */}
               {selectedBill.orders.map(order => (
                 <div key={order.id} className="c-order-group">
@@ -423,6 +425,7 @@ ${paymentData.serviceCharge > 0 ? `<div class="row"><span>Phí dịch vụ:</spa
                   ))}
                 </div>
               </div>
+              </form>
             </div>
 
             {/* Modal footer */}

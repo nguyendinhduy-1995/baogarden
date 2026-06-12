@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 
 interface UserData { id: string; name: string; role: string; }
@@ -37,7 +37,19 @@ export default function ReceptionPage() {
   useEffect(() => { fetchBookings(); }, [fetchBookings]);
   useEffect(() => { const t = setInterval(fetchBookings, 30000); return () => clearInterval(t); }, [fetchBookings]);
 
-  const flash = (msg: string, ok = true) => { setToast(msg); setToastOk(ok); setTimeout(() => setToast(''), 2500); };
+  const toastTimer = useRef<ReturnType<typeof setTimeout>>(null);
+
+  const flash = (msg: string, ok = true) => {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    setToast(msg); setToastOk(ok);
+    toastTimer.current = setTimeout(() => setToast(''), 2500);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+    };
+  }, []);
 
   const act = async (id: string, status: string, label: string) => {
     setBusy(id);

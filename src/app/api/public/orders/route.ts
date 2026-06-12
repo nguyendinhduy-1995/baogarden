@@ -2,12 +2,12 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { format } from 'date-fns';
 
-async function generateOrderCode(): Promise<string> {
+async function generateOrderCode(client: { order: typeof prisma.order }): Promise<string> {
   const today = new Date();
   const dateStr = format(today, 'yyyyMMdd');
   const prefix = `BG-${dateStr}-`;
 
-  const lastOrder = await prisma.order.findFirst({
+  const lastOrder = await client.order.findFirst({
     where: {
       orderCode: { startsWith: prefix },
     },
@@ -140,7 +140,7 @@ export async function POST(request: Request) {
         });
       }
 
-      const orderCode = await generateOrderCode();
+      const orderCode = await generateOrderCode(tx);
 
       const orderItemsData = items.map((item: { menuItemId: string; quantity: number; note?: string }) => {
         const menuItem = menuItemMap.get(item.menuItemId)!;

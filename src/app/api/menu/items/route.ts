@@ -28,6 +28,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'Thiếu thông tin bắt buộc' }, { status: 400 });
     }
 
+    const category = await prisma.menuCategory.findUnique({ where: { id: categoryId } });
+    if (!category) {
+      return NextResponse.json({ success: false, error: 'Danh mục không tồn tại' }, { status: 400 });
+    }
+
     const slug = name
       .toLowerCase()
       .normalize('NFD')

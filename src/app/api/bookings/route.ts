@@ -141,9 +141,9 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!guestCount || Number(guestCount) < 1) {
+    if (!guestCount || isNaN(Number(guestCount)) || Number(guestCount) < 1) {
       return NextResponse.json(
-        { success: false, error: 'Số khách phải lớn hơn 0' },
+        { success: false, error: 'Số khách phải là số hợp lệ và lớn hơn 0' },
         { status: 400 }
       );
     }
@@ -229,8 +229,8 @@ export async function POST(request: Request) {
         bookingDate: parsedDate,
         bookingTime,
         guestCount: Number(guestCount),
-        depositAmount: depositAmount != null ? Number(depositAmount) : Number(table.depositAmount),
-        minSpend: minSpend != null ? Number(minSpend) : Number(table.minSpend),
+        depositAmount: depositAmount != null ? (isNaN(Number(depositAmount)) ? Number(table.depositAmount) : Number(depositAmount)) : Number(table.depositAmount),
+        minSpend: minSpend != null ? (isNaN(Number(minSpend)) ? Number(table.minSpend) : Number(minSpend)) : Number(table.minSpend),
         note: note?.trim() || null,
         source: bookingSource,
         createdByUserId: currentUser?.id || null,

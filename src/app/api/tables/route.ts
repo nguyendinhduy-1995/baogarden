@@ -5,6 +5,14 @@ import type { Prisma } from '@prisma/client';
 
 export async function GET(request: Request) {
   try {
+    const currentUser = await getUserFromRequest(request);
+    if (!currentUser) {
+      return NextResponse.json(
+        { success: false, error: 'Chưa đăng nhập' },
+        { status: 401 }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status');
     const date = searchParams.get('date');
@@ -124,19 +132,33 @@ export async function POST(request: Request) {
       );
     }
 
+    const numMinGuests = minGuests != null ? Number(minGuests) : 2;
+    const numMaxGuests = maxGuests != null ? Number(maxGuests) : 4;
+    const numDepositAmount = depositAmount != null ? Number(depositAmount) : 0;
+    const numMinSpend = minSpend != null ? Number(minSpend) : 0;
+    const numPosX = posX != null ? Number(posX) : 0;
+    const numPosY = posY != null ? Number(posY) : 0;
+
+    if (isNaN(numMinGuests) || isNaN(numMaxGuests) || isNaN(numDepositAmount) || isNaN(numMinSpend) || isNaN(numPosX) || isNaN(numPosY)) {
+      return NextResponse.json(
+        { success: false, error: 'Các trường số không hợp lệ' },
+        { status: 400 }
+      );
+    }
+
     const table = await prisma.restaurantTable.create({
       data: {
         code: code.trim(),
         name: name.trim(),
         areaId,
         status: tableStatus || 'AVAILABLE',
-        minGuests: minGuests != null ? Number(minGuests) : 2,
-        maxGuests: maxGuests != null ? Number(maxGuests) : 4,
-        depositAmount: depositAmount != null ? Number(depositAmount) : 0,
-        minSpend: minSpend != null ? Number(minSpend) : 0,
+        minGuests: numMinGuests,
+        maxGuests: numMaxGuests,
+        depositAmount: numDepositAmount,
+        minSpend: numMinSpend,
         note: note?.trim() || null,
-        posX: posX != null ? Number(posX) : 0,
-        posY: posY != null ? Number(posY) : 0,
+        posX: numPosX,
+        posY: numPosY,
         width: width != null ? Number(width) : 36,
         height: height != null ? Number(height) : 22,
       },

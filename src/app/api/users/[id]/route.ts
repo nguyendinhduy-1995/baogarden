@@ -45,6 +45,13 @@ export async function GET(
       );
     }
 
+    if (!requireRole(currentUser.role, ['ADMIN', 'MANAGER']) && currentUser.id !== id) {
+      return NextResponse.json(
+        { success: false, error: 'Không có quyền truy cập' },
+        { status: 403 }
+      );
+    }
+
     return NextResponse.json(
       { success: true, data: user },
       { status: 200 }

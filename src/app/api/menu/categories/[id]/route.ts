@@ -11,6 +11,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const { id } = await params;
     const body = await request.json();
 
+    const existing = await prisma.menuCategory.findUnique({ where: { id } });
+    if (!existing) {
+      return NextResponse.json({ success: false, error: 'Danh mục không tồn tại' }, { status: 404 });
+    }
+
     const updateData: Record<string, unknown> = {};
     if (body.name !== undefined) updateData.name = body.name.trim();
     if (body.departmentDefault !== undefined) updateData.departmentDefault = body.departmentDefault;

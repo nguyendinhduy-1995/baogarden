@@ -112,16 +112,34 @@ export async function PATCH(
       updateData.note = note?.trim() || null;
     }
 
-    if (guestCount != null && Number(guestCount) > 0) {
+    if (guestCount != null) {
+      if (isNaN(Number(guestCount)) || Number(guestCount) < 1) {
+        return NextResponse.json(
+          { success: false, error: 'Số khách phải là số hợp lệ và lớn hơn 0' },
+          { status: 400 }
+        );
+      }
       updateData.guestCount = Number(guestCount);
       eventNotes.push(`Số khách: ${booking.guestCount} → ${Number(guestCount)}`);
     }
 
     if (depositAmount != null) {
+      if (isNaN(Number(depositAmount))) {
+        return NextResponse.json(
+          { success: false, error: 'Số tiền đặt cọc không hợp lệ' },
+          { status: 400 }
+        );
+      }
       updateData.depositAmount = Number(depositAmount);
     }
 
     if (minSpend != null) {
+      if (isNaN(Number(minSpend))) {
+        return NextResponse.json(
+          { success: false, error: 'Chi tiêu tối thiểu không hợp lệ' },
+          { status: 400 }
+        );
+      }
       updateData.minSpend = Number(minSpend);
     }
 

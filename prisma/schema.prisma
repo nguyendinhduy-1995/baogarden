@@ -236,7 +236,7 @@ model RestaurantTable {
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
 
-  area            TableArea       @relation(fields: [areaId], references: [id])
+  area            TableArea       @relation(fields: [areaId], references: [id], onDelete: Cascade)
   bookings        Booking[]
   sessions        TableSession[]
   serviceRequests ServiceRequest[]
@@ -263,11 +263,11 @@ model Booking {
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
 
-  customer        Customer        @relation(fields: [customerId], references: [id])
-  table           RestaurantTable @relation(fields: [tableId], references: [id])
-  createdByUser   User?           @relation("CreatedByUser", fields: [createdByUserId], references: [id])
-  confirmedByUser User?           @relation("ConfirmedByUser", fields: [confirmedByUserId], references: [id])
-  checkedInByUser User?           @relation("CheckedInByUser", fields: [checkedInByUserId], references: [id])
+  customer        Customer        @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  table           RestaurantTable @relation(fields: [tableId], references: [id], onDelete: Restrict)
+  createdByUser   User?           @relation("CreatedByUser", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  confirmedByUser User?           @relation("ConfirmedByUser", fields: [confirmedByUserId], references: [id], onDelete: SetNull)
+  checkedInByUser User?           @relation("CheckedInByUser", fields: [checkedInByUserId], references: [id], onDelete: SetNull)
   events          BookingEvent[]
   sessions        TableSession[]
 
@@ -289,7 +289,7 @@ model BookingEvent {
   createdAt DateTime         @default(now())
 
   booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  user    User?   @relation(fields: [userId], references: [id])
+  user    User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([bookingId])
   @@map("booking_events")
@@ -298,12 +298,12 @@ model BookingEvent {
 model CustomerNote {
   id         String   @id @default(cuid())
   customerId String
-  userId     String
+  userId     String?
   note       String
   createdAt  DateTime @default(now())
 
   customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  user     User     @relation(fields: [userId], references: [id])
+  user     User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@map("customer_notes")
 }
@@ -340,7 +340,7 @@ model MenuItem {
   createdAt              DateTime   @default(now())
   updatedAt              DateTime   @updatedAt
 
-  category   MenuCategory @relation(fields: [categoryId], references: [id])
+  category   MenuCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   orderItems OrderItem[]
 
   @@map("menu_items")
@@ -365,10 +365,10 @@ model TableSession {
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
-  table      RestaurantTable @relation(fields: [tableId], references: [id])
-  booking    Booking?        @relation(fields: [bookingId], references: [id])
-  openedBy   User?           @relation("OpenedByUser", fields: [openedByUserId], references: [id])
-  closedBy   User?           @relation("ClosedByUser", fields: [closedByUserId], references: [id])
+  table      RestaurantTable @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  booking    Booking?        @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  openedBy   User?           @relation("OpenedByUser", fields: [openedByUserId], references: [id], onDelete: SetNull)
+  closedBy   User?           @relation("ClosedByUser", fields: [closedByUserId], references: [id], onDelete: SetNull)
   orders     Order[]
   payments   Payment[]
   events     OrderEvent[]
@@ -393,8 +393,8 @@ model Order {
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
 
-  session    TableSession @relation(fields: [tableSessionId], references: [id])
-  createdBy  User?        @relation(fields: [createdByUserId], references: [id])
+  session    TableSession @relation(fields: [tableSessionId], references: [id], onDelete: Cascade)
+  createdBy  User?        @relation(fields: [createdByUserId], references: [id], onDelete: SetNull)
   items      OrderItem[]
   events     OrderEvent[]
 
@@ -420,7 +420,7 @@ model OrderItem {
   updatedAt        DateTime        @updatedAt
 
   order    Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  menuItem MenuItem @relation(fields: [menuItemId], references: [id])
+  menuItem MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Restrict)
   events   OrderEvent[]
 
   @@index([orderId])
@@ -441,8 +441,8 @@ model Payment {
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
-  session TableSession @relation(fields: [tableSessionId], references: [id])
-  cashier User?        @relation(fields: [cashierUserId], references: [id])
+  session TableSession @relation(fields: [tableSessionId], references: [id], onDelete: Cascade)
+  cashier User?        @relation(fields: [cashierUserId], references: [id], onDelete: SetNull)
 
   @@index([tableSessionId])
   @@map("payments")
@@ -459,9 +459,9 @@ model OrderEvent {
   createdAt       DateTime       @default(now())
 
   order      Order?       @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  orderItem  OrderItem?   @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  orderItem  OrderItem?   @relation(fields: [orderItemId], references: [id], onDelete: SetNull)
   session    TableSession? @relation(fields: [tableSessionId], references: [id], onDelete: Cascade)
-  createdBy  User?        @relation(fields: [createdByUserId], references: [id])
+  createdBy  User?        @relation(fields: [createdByUserId], references: [id], onDelete: SetNull)
 
   @@index([orderId])
   @@index([tableSessionId])
@@ -479,9 +479,9 @@ model ServiceRequest {
   resolvedAt       DateTime?
   resolvedByUserId String?
 
-  table    RestaurantTable @relation(fields: [tableId], references: [id])
-  session  TableSession?   @relation(fields: [tableSessionId], references: [id])
-  resolvedBy User?         @relation("ResolvedByUser", fields: [resolvedByUserId], references: [id])
+  table    RestaurantTable @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  session  TableSession?   @relation(fields: [tableSessionId], references: [id], onDelete: Cascade)
+  resolvedBy User?         @relation("ResolvedByUser", fields: [resolvedByUserId], references: [id], onDelete: SetNull)
 
   @@index([status])
   @@index([tableId])
@@ -500,6 +500,7 @@ model DailyEvent {
   type        String   // chill, ladies, acoustic, dj, party, recovery
   posterUrl   String?
   isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   @@map("daily_events")
 }
@@ -512,6 +513,7 @@ model WeeklySchedule {
   type      String
   sortOrder Int      @default(0)
   isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   @@map("weekly_schedules")
 }
@@ -525,6 +527,7 @@ model UpcomingEvent {
   tag         String
   isActive    Boolean  @default(true)
   sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   @@map("upcoming_events")
 }

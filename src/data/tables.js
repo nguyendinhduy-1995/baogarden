@@ -81,10 +81,10 @@ export const TIME_SLOTS = [
 ];
 
 export const BOOKING_STATUSES = {
-  pending: { label: 'Chờ xác nhận', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)' },
-  confirmed: { label: 'Đã xác nhận', color: '#4ade80', bg: 'rgba(74, 222, 128, 0.15)' },
-  checkedIn: { label: 'Đã check-in', color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.15)' },
-  completed: { label: 'Hoàn thành', color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.15)' },
-  cancelled: { label: 'Đã hủy', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.15)' },
-  noShow: { label: 'Không đến', color: '#6b7280', bg: 'rgba(107, 114, 128, 0.15)' },
+  PENDING: { label: 'Chờ xác nhận', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)' },
+  CONFIRMED: { label: 'Đã xác nhận', color: '#4ade80', bg: 'rgba(74, 222, 128, 0.15)' },
+  ARRIVED: { label: 'Đã check-in', color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.15)' },
+  COMPLETED: { label: 'Hoàn thành', color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.15)' },
+  CANCELLED: { label: 'Đã hủy', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.15)' },
+  NO_SHOW: { label: 'Không đến', color: '#6b7280', bg: 'rgba(107, 114, 128, 0.15)' },
 };
