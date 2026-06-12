@@ -29,8 +29,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           fontSize: '13px',
           fontWeight: 600,
           letterSpacing: '0.5px',
-          position: 'relative',
-          zIndex: 99999,
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 100000,
+          height: '30px',
+          lineHeight: '18px',
         }}>
           ⚠️ Đây là dữ liệu demo để test App
         </div>

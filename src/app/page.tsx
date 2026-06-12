@@ -899,7 +899,7 @@ const CSS = `
    ═══════════════════════════════════════════════════════════════ */
 .hp-header {
   position: fixed;
-  top: 0;
+  top: 30px;
   left: 0;
   right: 0;
   z-index: 100;
