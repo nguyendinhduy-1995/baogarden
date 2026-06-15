@@ -545,15 +545,24 @@ const CSS = `
 .mn-btn-save:disabled{opacity:0.5;cursor:wait}
 
 /* Responsive */
+@media(max-width:1024px){
+  .mn-cats-list{overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap;padding-bottom:4px}
+  .mn-cat-item{white-space:nowrap;flex-shrink:0}
+  .mn-filters{flex-wrap:wrap}
+}
 @media(max-width:640px){
   .mn-hide-mobile{display:none}
   .mn-show-mobile{display:flex}
-  .mn-header{flex-direction:column}
+  .mn-header{flex-direction:column;gap:10px}
   .mn-header-actions{width:100%;justify-content:flex-end}
   .mn-form-row{grid-template-columns:1fr}
   .mn-filters{flex-direction:column}
-  .mn-search{min-width:0}
+  .mn-search{min-width:0;width:100%}
   .mn-modal-overlay{padding:0;align-items:flex-end}
-  .mn-modal{border-radius:20px 20px 0 0;max-height:90vh}
+  .mn-modal{border-radius:20px 20px 0 0;max-height:92vh}
+  .mn-modal-body{padding:16px}
+  .mn-btn-cancel,.mn-btn-save{flex:1}
+  .mn-card-top{flex-direction:column;gap:4px}
+  .mn-card-price{align-self:flex-start}
 }
 `;

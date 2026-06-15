@@ -746,6 +746,11 @@ const CSS = `
 @keyframes bkp-down{from{transform:translateX(-50%) translateY(-16px);opacity:0}to{transform:translateX(-50%) translateY(0);opacity:1}}
 
 /* responsive */
+@media(max-width:1024px){
+  .bkp-filters{flex-wrap:wrap}
+  .bkc-grid{grid-template-columns:repeat(4,1fr)}
+  .bkp-detail-grid{grid-template-columns:1fr 1fr}
+}
 @media(max-width:640px){
   .bkp-hide-m{display:none}
   .bkp-show-m{display:flex}
@@ -764,5 +769,7 @@ const CSS = `
   .bkc-day{min-height:80px}
   .bkp-view-bar{flex-direction:column;align-items:stretch}
   .bkp-view-toggle{align-self:flex-end}
+  .bkp-confirm{max-width:100%;padding:20px}
+  .bkp-toast{left:12px;right:12px;transform:none}
 }
 `;

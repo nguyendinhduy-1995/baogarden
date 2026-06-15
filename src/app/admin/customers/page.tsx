@@ -785,5 +785,8 @@ const CSS = `
   .cu-form-row{grid-template-columns:1fr}
   .cu-toast{left:12px;right:12px;top:12px}
   .cu-skeleton-stats{grid-template-columns:1fr}
+  .cu-card-meta{flex-wrap:wrap;gap:8px}
+  .cu-card-actions{flex-direction:column}
+  .cu-act-btn{width:100%}
 }
 `;

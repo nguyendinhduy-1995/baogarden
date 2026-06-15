@@ -434,6 +434,10 @@ const CSS = `
 .rp-empty-text{color:var(--text-tertiary);font-size:0.85rem}
 
 /* responsive */
+@media(max-width:1024px){
+  .rp-stats{grid-template-columns:repeat(2,1fr)}
+  .rp-contrib-track{width:60px}
+}
 @media(max-width:640px){
   .rp-filters{flex-direction:column;align-items:stretch;gap:var(--space-md)}
   .rp-date-inputs{flex-wrap:wrap;gap:6px}
@@ -445,5 +449,6 @@ const CSS = `
   .rp-table-scroll{margin:0 calc(var(--space-xl) * -1);padding:0 var(--space-xl)}
   .rp-card{padding:var(--space-lg)}
   .rp-section-title{font-size:0.95rem}
+  .rp-contrib-track{width:40px}
 }
 `;

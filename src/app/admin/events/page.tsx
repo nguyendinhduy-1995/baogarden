@@ -614,4 +614,24 @@ const CSS = `
     font-size: 14px;
     padding: 2px;
   }
+
+  /* ══ Responsive ══ */
+  @media(max-width:1024px){
+    .ev-tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px}
+    .ev-tab{white-space:nowrap;flex-shrink:0}
+    .ev-form-grid{grid-template-columns:1fr 1fr}
+  }
+  @media(max-width:640px){
+    .ev-tabs{gap:4px}
+    .ev-tab{padding:8px 12px;font-size:12px}
+    .ev-form-grid{grid-template-columns:1fr}
+    .ev-card{padding:14px}
+    .ev-card-header{flex-direction:column;align-items:flex-start}
+    .ev-card-name{font-size:14px}
+    .ev-btn-add{width:100%;text-align:center}
+    .ev-toolbar{justify-content:stretch}
+    .ev-actions{flex-direction:column}
+    .ev-btn-save,.ev-btn-cancel{width:100%;text-align:center}
+    .ev-btn-edit,.ev-btn-delete{padding:6px 14px;font-size:13px}
+  }
 `;

@@ -893,6 +893,12 @@ const CSS = `
 .tb-qr-warn{font-size:0.72rem;color:var(--text-tertiary);text-align:center;padding:8px 12px;background:rgba(239,68,68,0.04);border:1px solid rgba(239,68,68,0.1);border-radius:8px;line-height:1.5}
 
 /* responsive */
+@media(max-width:1024px){
+  .tb-filters{flex-wrap:wrap}
+  .tb-area-tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap}
+  .tb-area-tab{white-space:nowrap;flex-shrink:0}
+  .tb-floor{height:450px}
+}
 @media(max-width:640px){
   .tb-header{flex-direction:column;gap:12px}
   .tb-header-actions{width:100%;justify-content:space-between}
@@ -907,7 +913,7 @@ const CSS = `
   .tb-modal-head{padding:16px 20px}
   .tb-modal-body{padding:16px 20px}
   .tb-modal-foot{padding:12px 20px}
-  .tb-floor{height:400px}
+  .tb-floor{height:350px}
   .tb-legend{top:var(--space-sm);right:var(--space-sm);padding:var(--space-sm)}
   .tb-act{min-height:44px;padding:8px 14px;font-size:0.78rem}
   .tb-qr-modal{max-width:100%}
