@@ -83,16 +83,16 @@ export default function LoginPage() {
             <div className={`lg-field ${focused === 'email' ? 'lg-field-focus' : ''} ${email ? 'lg-field-filled' : ''}`}>
               <input
                 id="login-email"
-                type="email"
+                type="text"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 onFocus={() => setFocused('email')}
                 onBlur={() => setFocused('')}
                 placeholder=" "
                 required
-                autoComplete="email"
+                autoComplete="username"
               />
-              <label htmlFor="login-email">Email</label>
+              <label htmlFor="login-email">Tên đăng nhập</label>
             </div>
 
             {/* Password */}

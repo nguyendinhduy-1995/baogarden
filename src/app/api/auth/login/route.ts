@@ -6,11 +6,11 @@ import type { SafeUser } from '@/lib/auth';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { email, password } = body;
+    const { email: username, password } = body;
 
-    if (!email || typeof email !== 'string') {
+    if (!username || typeof username !== 'string') {
       return NextResponse.json(
-        { success: false, error: 'Email là bắt buộc' },
+        { success: false, error: 'Tên đăng nhập là bắt buộc' },
         { status: 400 }
       );
     }
@@ -23,12 +23,12 @@ export async function POST(request: Request) {
     }
 
     const user = await prisma.user.findUnique({
-      where: { email: email.toLowerCase().trim() },
+      where: { email: username.toLowerCase().trim() },
     });
 
     if (!user) {
       return NextResponse.json(
-        { success: false, error: 'Email hoặc mật khẩu không đúng' },
+        { success: false, error: 'Tên đăng nhập hoặc mật khẩu không đúng' },
         { status: 401 }
       );
     }
@@ -43,7 +43,7 @@ export async function POST(request: Request) {
     const isPasswordValid = await verifyPassword(password, user.passwordHash);
     if (!isPasswordValid) {
       return NextResponse.json(
-        { success: false, error: 'Email hoặc mật khẩu không đúng' },
+        { success: false, error: 'Tên đăng nhập hoặc mật khẩu không đúng' },
         { status: 401 }
       );
     }

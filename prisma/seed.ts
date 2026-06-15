@@ -9,16 +9,16 @@ async function main() {
 
   // ==================== USERS (upsert - won't duplicate) ====================
   const users: Record<string, { name: string; role: string; phone: string }> = {
-    'admin@baogarden.vn': { name: 'Admin Hệ Thống', role: 'ADMIN', phone: '0900000001' },
-    'manager@baogarden.vn': { name: 'Nguyễn Quản Lý', role: 'MANAGER', phone: '0900000002' },
-    'marketing@baogarden.vn': { name: 'Marketing Team', role: 'MARKETING', phone: '0900000010' },
-    'booking@baogarden.vn': { name: 'Trần Booking', role: 'BOOKING', phone: '0900000007' },
-    'reception@baogarden.vn': { name: 'Lê Lễ Tân', role: 'RECEPTION', phone: '0900000008' },
-    'waiter@baogarden.vn': { name: 'Phạm Phục Vụ', role: 'WAITER', phone: '0900000003' },
-    'waiter2@baogarden.vn': { name: 'Hoàng Phục Vụ 2', role: 'WAITER', phone: '0900000009' },
-    'kitchen@baogarden.vn': { name: 'Võ Bếp Trưởng', role: 'KITCHEN', phone: '0900000004' },
-    'bar@baogarden.vn': { name: 'Đặng Bartender', role: 'BAR', phone: '0900000005' },
-    'cashier@baogarden.vn': { name: 'Mai Thu Ngân', role: 'CASHIER', phone: '0900000006' },
+    'admin': { name: 'Admin Hệ Thống', role: 'ADMIN', phone: '0900000001' },
+    'manager': { name: 'Nguyễn Quản Lý', role: 'MANAGER', phone: '0900000002' },
+    'marketing': { name: 'Marketing Team', role: 'MARKETING', phone: '0900000010' },
+    'booking': { name: 'Trần Booking', role: 'BOOKING', phone: '0900000007' },
+    'reception': { name: 'Lê Lễ Tân', role: 'RECEPTION', phone: '0900000008' },
+    'waiter': { name: 'Phạm Phục Vụ', role: 'WAITER', phone: '0900000003' },
+    'waiter2': { name: 'Hoàng Phục Vụ 2', role: 'WAITER', phone: '0900000009' },
+    'kitchen': { name: 'Võ Bếp Trưởng', role: 'KITCHEN', phone: '0900000004' },
+    'bar': { name: 'Đặng Bartender', role: 'BAR', phone: '0900000005' },
+    'cashier': { name: 'Mai Thu Ngân', role: 'CASHIER', phone: '0900000006' },
   };
 
   const userRecords: Record<string, string> = {};
@@ -117,23 +117,37 @@ async function main() {
     console.log(`✅ Giữ nguyên ${existingCats.length} danh mục menu hiện có`);
   } else {
     const catDefs = [
-      { name: 'Món khai vị', departmentDefault: 'KITCHEN' as const, sortOrder: 1 },
-      { name: 'Món nướng', departmentDefault: 'KITCHEN' as const, sortOrder: 2 },
-      { name: 'Hải sản', departmentDefault: 'KITCHEN' as const, sortOrder: 3 },
-      { name: 'Món chính', departmentDefault: 'KITCHEN' as const, sortOrder: 4 },
-      { name: 'Bia', departmentDefault: 'BAR' as const, sortOrder: 5 },
-      { name: 'Rượu', departmentDefault: 'BAR' as const, sortOrder: 6 },
-      { name: 'Cocktail', departmentDefault: 'BAR' as const, sortOrder: 7 },
-      { name: 'Nước ngọt', departmentDefault: 'BAR' as const, sortOrder: 8 },
+      { name: 'Nghêu', departmentDefault: 'KITCHEN' as const, sortOrder: 1 },
+      { name: 'Vẹm xanh', departmentDefault: 'KITCHEN' as const, sortOrder: 2 },
+      { name: 'Cơm', departmentDefault: 'KITCHEN' as const, sortOrder: 3 },
+      { name: 'Lẩu', departmentDefault: 'KITCHEN' as const, sortOrder: 4 },
+      { name: 'Khai vị & Snacks', departmentDefault: 'KITCHEN' as const, sortOrder: 5 },
+      { name: 'Salads', departmentDefault: 'KITCHEN' as const, sortOrder: 6 },
+      { name: 'Raw Bar', departmentDefault: 'KITCHEN' as const, sortOrder: 7 },
+      { name: 'Món chính', departmentDefault: 'KITCHEN' as const, sortOrder: 8 },
+      { name: 'Cơm - Mì - Phở', departmentDefault: 'KITCHEN' as const, sortOrder: 9 },
+      { name: 'New Combo', departmentDefault: 'KITCHEN' as const, sortOrder: 10 },
+      { name: 'Combo 2 khách', departmentDefault: 'KITCHEN' as const, sortOrder: 11 },
+      { name: 'Combo 4 khách', departmentDefault: 'KITCHEN' as const, sortOrder: 12 },
+      { name: 'Combo 6-8 khách', departmentDefault: 'KITCHEN' as const, sortOrder: 13 },
+      { name: 'Combo 8-10 khách', departmentDefault: 'KITCHEN' as const, sortOrder: 14 },
+      { name: 'Cocktail', departmentDefault: 'BAR' as const, sortOrder: 15 },
+      { name: 'Rượu vang', departmentDefault: 'BAR' as const, sortOrder: 16 },
+      { name: 'Bia Heineken', departmentDefault: 'BAR' as const, sortOrder: 17 },
+      { name: 'Bia Tiger', departmentDefault: 'BAR' as const, sortOrder: 18 },
+      { name: 'Rượu khác', departmentDefault: 'BAR' as const, sortOrder: 19 },
+      { name: 'Nước ngọt', departmentDefault: 'BAR' as const, sortOrder: 20 },
+      { name: 'Trái cây', departmentDefault: 'BAR' as const, sortOrder: 21 },
+      { name: 'Phụ phí', departmentDefault: 'SERVICE' as const, sortOrder: 22 },
     ];
     for (const c of catDefs) {
       const cat = await prisma.menuCategory.create({ data: c });
       catMap[c.name] = cat.id;
     }
-    console.log('✅ 8 danh mục menu');
+    console.log('✅ 22 danh mục menu (thực tế)');
   }
 
-  // ==================== MENU ITEMS ====================
+  // ==================== MENU ITEMS (ACTUAL MENU) ====================
   const existingItems = await prisma.menuItem.findMany();
   const menuItemIds: string[] = existingItems.map(i => i.id);
 
@@ -148,51 +162,105 @@ async function main() {
     }
 
     const itemDefs = [
-      { name: 'Mẹt khô tổng hợp', price: 189000, cat: 'Món khai vị', dept: 'KITCHEN' as const, desc: 'Tổng hợp các loại khô đặc biệt', time: 15, featured: true },
-      { name: 'Khô gà lá chanh', price: 89000, cat: 'Món khai vị', dept: 'KITCHEN' as const, desc: 'Khô gà giòn rụm với lá chanh thơm', time: 10 },
-      { name: 'Gỏi cuốn tôm thịt', price: 69000, cat: 'Món khai vị', dept: 'KITCHEN' as const, desc: 'Gỏi cuốn tươi mát, chấm mắm nêm', time: 10 },
-      { name: 'Chả giò hải sản', price: 79000, cat: 'Món khai vị', dept: 'KITCHEN' as const, desc: 'Chả giò giòn nhân hải sản', time: 12 },
-      { name: 'Mực nướng sa tế', price: 159000, cat: 'Món nướng', dept: 'KITCHEN' as const, desc: 'Mực tươi nướng sa tế cay thơm', time: 20, featured: true },
-      { name: 'Tôm nướng muối ớt', price: 189000, cat: 'Món nướng', dept: 'KITCHEN' as const, desc: 'Tôm sú nướng muối ớt đỏ', time: 18 },
-      { name: 'Sườn heo nướng BBQ', price: 169000, cat: 'Món nướng', dept: 'KITCHEN' as const, desc: 'Sườn heo non ướp sốt BBQ đặc biệt', time: 25 },
-      { name: 'Gà nướng mật ong', price: 149000, cat: 'Món nướng', dept: 'KITCHEN' as const, desc: 'Gà ta nướng mật ong giòn da', time: 30 },
-      { name: 'Hàu nướng phô mai', price: 139000, cat: 'Hải sản', dept: 'KITCHEN' as const, desc: 'Hàu tươi nướng phô mai vàng ươm', time: 15, featured: true },
-      { name: 'Cua rang me', price: 359000, cat: 'Hải sản', dept: 'KITCHEN' as const, desc: 'Cua biển rang me chua ngọt', time: 25 },
-      { name: 'Nghêu hấp xả', price: 99000, cat: 'Hải sản', dept: 'KITCHEN' as const, desc: 'Nghêu tươi hấp sả ớt', time: 12 },
-      { name: 'Lẩu hải sản chua cay', price: 399000, cat: 'Món chính', dept: 'KITCHEN' as const, desc: 'Lẩu hải sản tổng hợp Tom Yum', time: 20, featured: true },
-      { name: 'Cơm chiên hải sản', price: 129000, cat: 'Món chính', dept: 'KITCHEN' as const, desc: 'Cơm chiên dương châu hải sản', time: 15 },
-      { name: 'Mì xào hải sản', price: 119000, cat: 'Món chính', dept: 'KITCHEN' as const, desc: 'Mì xào giòn với tôm, mực, nghêu', time: 15 },
-      { name: 'Heineken Bạc', price: 35000, cat: 'Bia', dept: 'BAR' as const, desc: 'Lon 330ml', time: 1 },
-      { name: 'Heineken', price: 30000, cat: 'Bia', dept: 'BAR' as const, desc: 'Lon 330ml', time: 1 },
-      { name: 'Tiger', price: 25000, cat: 'Bia', dept: 'BAR' as const, desc: 'Lon 330ml', time: 1 },
-      { name: 'Tiger Crystal', price: 28000, cat: 'Bia', dept: 'BAR' as const, desc: 'Lon 330ml', time: 1 },
-      { name: 'Bia Sài Gòn Special', price: 22000, cat: 'Bia', dept: 'BAR' as const, desc: 'Lon 330ml', time: 1 },
-      { name: 'Bia 333', price: 18000, cat: 'Bia', dept: 'BAR' as const, desc: 'Lon 330ml', time: 1 },
-      { name: 'Soju Hàn Quốc', price: 85000, cat: 'Rượu', dept: 'BAR' as const, desc: 'Chai 360ml, nhiều vị', time: 1 },
-      { name: 'Rượu vang đỏ Chile', price: 450000, cat: 'Rượu', dept: 'BAR' as const, desc: 'Chai 750ml', time: 2 },
-      { name: 'Cocktail Signature Báo Garden', price: 120000, cat: 'Cocktail', dept: 'BAR' as const, desc: 'Cocktail đặc biệt của quán', time: 5, featured: true },
-      { name: 'Mojito', price: 95000, cat: 'Cocktail', dept: 'BAR' as const, desc: 'Rum, chanh, bạc hà, soda', time: 5 },
-      { name: 'Long Island Iced Tea', price: 110000, cat: 'Cocktail', dept: 'BAR' as const, desc: 'Hỗn hợp rượu mạnh, cola, chanh', time: 5 },
-      { name: 'Margarita', price: 99000, cat: 'Cocktail', dept: 'BAR' as const, desc: 'Tequila, triple sec, chanh', time: 5 },
-      { name: 'Pepsi', price: 20000, cat: 'Nước ngọt', dept: 'BAR' as const, desc: 'Lon 330ml', time: 1 },
-      { name: '7Up', price: 20000, cat: 'Nước ngọt', dept: 'BAR' as const, desc: 'Lon 330ml', time: 1 },
-      { name: 'Nước suối', price: 15000, cat: 'Nước ngọt', dept: 'BAR' as const, desc: 'Chai 500ml', time: 1 },
-      { name: 'Red Bull', price: 30000, cat: 'Nước ngọt', dept: 'BAR' as const, desc: 'Lon 250ml', time: 1 },
-      { name: 'Nước ép cam', price: 45000, cat: 'Nước ngọt', dept: 'BAR' as const, desc: 'Ly 400ml, cam vắt tươi', time: 3 },
+      // --- Nghêu ---
+      { name: 'Nghêu nướng mỡ chài', price: 259000, cat: 'Nghêu', dept: 'KITCHEN' as const, desc: 'Clams grilled with pork fat', time: 15, featured: true },
+      { name: 'Nghêu hấp Thái / hấp xả', price: 179000, cat: 'Nghêu', dept: 'KITCHEN' as const, desc: 'Clams steamed with Thai herbs or lemongrass', time: 12 },
+      { name: 'Nghêu xào rau quế', price: 179000, cat: 'Nghêu', dept: 'KITCHEN' as const, desc: 'Clams stir-fried with basil', time: 12 },
+      // --- Vẹm xanh ---
+      { name: 'Vẹm xanh New Zealand sốt Thái', price: 269000, cat: 'Vẹm xanh', dept: 'KITCHEN' as const, desc: 'New Zealand green mussels in Thai sauce', time: 15, featured: true },
+      { name: 'Vẹm xanh New Zealand đút lò phô mai', price: 269000, cat: 'Vẹm xanh', dept: 'KITCHEN' as const, desc: 'Baked green mussels with cheese', time: 18 },
+      // --- Cơm ---
+      { name: 'Cơm chiên cá mặn', price: 199000, cat: 'Cơm', dept: 'KITCHEN' as const, desc: 'Salted fish fried rice', time: 15 },
+      { name: 'Cơm chiên Hoàng Báo', price: 199000, cat: 'Cơm', dept: 'KITCHEN' as const, desc: 'Royal golden fried rice', time: 15, featured: true },
+      { name: 'Cơm chiên hải sản X.O', price: 199000, cat: 'Cơm', dept: 'KITCHEN' as const, desc: 'Seafood fried rice with XO sauce', time: 15 },
+      { name: 'Cơm chiên Dương Châu', price: 199000, cat: 'Cơm', dept: 'KITCHEN' as const, desc: 'Yangzhou-style fried rice', time: 15 },
+      // --- Lẩu ---
+      { name: 'Lẩu hải sản TomYum', price: 469000, cat: 'Lẩu', dept: 'KITCHEN' as const, desc: 'Tom Yum seafood hotpot', time: 20, featured: true },
+      { name: 'Lẩu hải sản Vương Quốc Nấm', price: 469000, cat: 'Lẩu', dept: 'KITCHEN' as const, desc: 'Seafood & mushroom kingdom hotpot', time: 20 },
+      { name: 'Lẩu gà tre tiềm ớt hiểm', price: 469000, cat: 'Lẩu', dept: 'KITCHEN' as const, desc: 'Stewed free-range chicken with bird\'s eye chili hotpot', time: 25 },
+      // --- Khai vị & Snacks ---
+      { name: 'Bắp bò ngâm nước mắm', price: 269000, cat: 'Khai vị & Snacks', dept: 'KITCHEN' as const, desc: 'Beef shank marinated in fish sauce', time: 10 },
+      { name: 'Nạc nọng chiên kiểu Thái', price: 189000, cat: 'Khai vị & Snacks', dept: 'KITCHEN' as const, desc: 'Thai-style fried pork jowl', time: 12 },
+      { name: 'Khô mực cháy tỏi', price: 279000, cat: 'Khai vị & Snacks', dept: 'KITCHEN' as const, desc: 'Dried squid with garlic', time: 10, featured: true },
+      { name: 'Khô mực chiên nước mắm', price: 279000, cat: 'Khai vị & Snacks', dept: 'KITCHEN' as const, desc: 'Dried squid fried with fish sauce', time: 10 },
+      { name: 'Que hải sản chiên giòn', price: 169000, cat: 'Khai vị & Snacks', dept: 'KITCHEN' as const, desc: 'Crispy fried seafood sticks', time: 12 },
+      // --- Salads ---
+      { name: 'Salad chanh dây ức gà hạc óc chó', price: 249000, cat: 'Salads', dept: 'KITCHEN' as const, desc: 'Passion fruit salad with chicken breast & walnuts', time: 10 },
+      { name: 'Salad gà nướng', price: 249000, cat: 'Salads', dept: 'KITCHEN' as const, desc: 'Grilled chicken salad', time: 10 },
+      { name: 'Gỏi hải sản miến Thái', price: 279000, cat: 'Salads', dept: 'KITCHEN' as const, desc: 'Thai-style seafood glass noodle salad', time: 12 },
+      { name: 'Gỏi đu đủ bò một nắng kiểu Thái', price: 179000, cat: 'Salads', dept: 'KITCHEN' as const, desc: 'Thai papaya salad with sun-dried beef', time: 10 },
+      // --- Raw Bar ---
+      { name: 'Hào Úc sống sốt Tabaco', price: 59000, cat: 'Raw Bar', dept: 'KITCHEN' as const, desc: 'Australian oyster with Tabasco sauce (1 con)', time: 3, featured: true },
+      { name: 'Hào Úc Tartare', price: 59000, cat: 'Raw Bar', dept: 'KITCHEN' as const, desc: 'Australian oyster tartare (1 con)', time: 3 },
+      { name: 'Cá hồi Tartare trứng cá đen', price: 329000, cat: 'Raw Bar', dept: 'KITCHEN' as const, desc: 'Salmon tartare with black caviar', time: 10 },
+      // --- Món chính ---
+      { name: 'Bò Tenderloin nướng va nấm áp chảo bơ tỏi', price: 489000, cat: 'Món chính', dept: 'KITCHEN' as const, desc: 'Grilled beef tenderloin with butter garlic mushrooms', time: 25, featured: true },
+      { name: 'Sườn bò Úc đút lò sốt BBQ', price: 489000, cat: 'Món chính', dept: 'KITCHEN' as const, desc: 'Oven-baked Australian beef ribs with BBQ sauce', time: 30 },
+      { name: 'Đùi vịt nướng kiểu Pháp', price: 279000, cat: 'Món chính', dept: 'KITCHEN' as const, desc: 'French-style roasted duck leg', time: 25 },
+      { name: 'File cá chẽm chiên giòn sốt Sambal', price: 219000, cat: 'Món chính', dept: 'KITCHEN' as const, desc: 'Crispy fried barramundi fillet with Sambal sauce', time: 20 },
+      { name: 'Cá hồi sốt cay Tokyo', price: 329000, cat: 'Món chính', dept: 'KITCHEN' as const, desc: 'Salmon with spicy Tokyo sauce', time: 20 },
+      // --- Cơm - Mì - Phở ---
+      { name: 'Cơm chiên Sambal và cá hồi áp chảo', price: 269000, cat: 'Cơm - Mì - Phở', dept: 'KITCHEN' as const, desc: 'Sambal fried rice with pan-seared salmon', time: 15 },
+      { name: 'Mì Udon sốt tiêu và bò nướng hương thảo', price: 249000, cat: 'Cơm - Mì - Phở', dept: 'KITCHEN' as const, desc: 'Udon noodles with pepper sauce & rosemary grilled beef', time: 18 },
+      // --- Bia Heineken ---
+      { name: 'Heineken chai 330ml', price: 79000, cat: 'Bia Heineken', dept: 'BAR' as const, desc: 'Chai 330ml', time: 1 },
+      { name: 'Heineken lon 350ml', price: 38000, cat: 'Bia Heineken', dept: 'BAR' as const, desc: 'Lon 350ml', time: 1 },
+      { name: 'Heineken lon (bạc)', price: 38000, cat: 'Bia Heineken', dept: 'BAR' as const, desc: 'Lon 250ml - Silver', time: 1 },
+      { name: 'Heineken lon 250ml', price: 30000, cat: 'Bia Heineken', dept: 'BAR' as const, desc: 'Lon 250ml', time: 1 },
+      { name: 'Heineken tháp 2 lít', price: 369000, cat: 'Bia Heineken', dept: 'BAR' as const, desc: 'Tháp bia 2 lít', time: 3, featured: true },
+      // --- Bia Tiger ---
+      { name: 'Tiger tháp 3 lít', price: 389000, cat: 'Bia Tiger', dept: 'BAR' as const, desc: 'Tháp bia 3 lít', time: 3 },
+      { name: 'Tiger lon', price: 35000, cat: 'Bia Tiger', dept: 'BAR' as const, desc: 'Lon Tiger Lager', time: 1 },
+      { name: 'Tiger Crystal lon', price: 35000, cat: 'Bia Tiger', dept: 'BAR' as const, desc: 'Lon Tiger Crystal', time: 1 },
+      { name: 'Tiger chai', price: 33000, cat: 'Bia Tiger', dept: 'BAR' as const, desc: 'Chai Tiger', time: 1 },
+      // --- Cocktail ---
+      { name: 'Cocktail tháp 3L - Only You', price: 690000, cat: 'Cocktail', dept: 'BAR' as const, desc: 'Cocktail tower 3L - Only You', time: 8 },
+      { name: 'Cocktail tháp 3L - Lovely Susana', price: 690000, cat: 'Cocktail', dept: 'BAR' as const, desc: 'Cocktail tower 3L - Lovely Susana', time: 8 },
+      { name: 'Cocktail tháp 3L - The Eight One', price: 690000, cat: 'Cocktail', dept: 'BAR' as const, desc: 'Cocktail tower 3L - The Eight One', time: 8, featured: true },
+      // --- Rượu vang ---
+      { name: 'Rượu vang Casati', price: 540000, cat: 'Rượu vang', dept: 'BAR' as const, desc: 'Chai 750ml', time: 2 },
+      { name: 'Rượu vang Vincenzo', price: 630000, cat: 'Rượu vang', dept: 'BAR' as const, desc: 'Chai 750ml', time: 2 },
+      { name: 'Rượu vang Segrecto', price: 720000, cat: 'Rượu vang', dept: 'BAR' as const, desc: 'Chai 750ml', time: 2 },
+      // --- Rượu khác ---
+      { name: 'Rượu mơ', price: 199000, cat: 'Rượu khác', dept: 'BAR' as const, desc: 'Chai rượu mơ', time: 2 },
+      { name: 'Rượu Soju - Truyền thống', price: 159000, cat: 'Rượu khác', dept: 'BAR' as const, desc: 'Soju truyền thống', time: 1 },
+      { name: 'Rượu Soju - Đào', price: 159000, cat: 'Rượu khác', dept: 'BAR' as const, desc: 'Soju vị đào', time: 1 },
+      { name: 'Rượu Soju - Việt quất', price: 159000, cat: 'Rượu khác', dept: 'BAR' as const, desc: 'Soju vị việt quất', time: 1 },
+      { name: 'Strongbow lon', price: 33000, cat: 'Rượu khác', dept: 'BAR' as const, desc: 'Strongbow Sparkling Ciders', time: 1 },
+      // --- Nước ngọt ---
+      { name: 'Dasani', price: 26000, cat: 'Nước ngọt', dept: 'BAR' as const, desc: 'Nước suối Dasani', time: 1 },
+      { name: 'Coca/Pepsi', price: 32000, cat: 'Nước ngọt', dept: 'BAR' as const, desc: 'Coca-Cola hoặc Pepsi', time: 1 },
+      { name: 'Sprite', price: 32000, cat: 'Nước ngọt', dept: 'BAR' as const, desc: 'Sprite lon', time: 1 },
+      { name: 'Sting', price: 32000, cat: 'Nước ngọt', dept: 'BAR' as const, desc: 'Sting lon', time: 1 },
+      // --- Trái cây ---
+      { name: 'Trái cây nhỏ', price: 199000, cat: 'Trái cây', dept: 'BAR' as const, desc: 'Đĩa trái cây tổng hợp nhỏ', time: 5 },
+      { name: 'Trái cây lớn', price: 299000, cat: 'Trái cây', dept: 'BAR' as const, desc: 'Đĩa trái cây tổng hợp lớn', time: 5 },
+      // --- Phụ phí ---
+      { name: 'Khăn lạnh', price: 5000, cat: 'Phụ phí', dept: 'SERVICE' as const, desc: 'Khăn lạnh phục vụ', time: 1 },
+      { name: 'Khăn giấy khô', price: 15000, cat: 'Phụ phí', dept: 'SERVICE' as const, desc: 'Khăn giấy khô', time: 1 },
+      { name: 'Bánh tráng nướng', price: 28000, cat: 'Phụ phí', dept: 'SERVICE' as const, desc: 'Bánh tráng nướng', time: 5 },
     ];
 
+    const usedSlugs = new Set<string>();
     for (let i = 0; i < itemDefs.length; i++) {
       const item = itemDefs[i];
+      let slug = slugify(item.name);
+      if (usedSlugs.has(slug)) {
+        let counter = 2;
+        while (usedSlugs.has(`${slug}-${counter}`)) counter++;
+        slug = `${slug}-${counter}`;
+      }
+      usedSlugs.add(slug);
       const mi = await prisma.menuItem.create({
         data: {
-          name: item.name, slug: slugify(item.name), description: item.desc,
+          name: item.name, slug, description: item.desc,
           price: item.price, categoryId: catMap[item.cat], department: item.dept,
           preparationTimeMinutes: item.time, isFeatured: item.featured || false, sortOrder: i,
         },
       });
       menuItemIds.push(mi.id);
     }
-    console.log('✅ 31 món ăn/đồ uống');
+    console.log('✅ Menu thực tế Báo Garden (58 món)');
   }
 
   // ==================== BOOKINGS (today + tomorrow) ====================
@@ -385,11 +453,11 @@ async function main() {
   console.log('🎉 SEEDING HOÀN TẤT!\n');
   console.log('📋 TÀI KHOẢN ĐĂNG NHẬP (Mật khẩu: 123456)');
   console.log('─'.repeat(60));
-  console.log('  Email                      │ Vai trò    │ Tên');
+  console.log('  Tên đăng nhập │ Vai trò    │ Tên');
   console.log('─'.repeat(60));
-  for (const [email, info] of Object.entries(users)) {
+  for (const [username, info] of Object.entries(users)) {
     const role = info.role.padEnd(10);
-    console.log(`  ${email.padEnd(28)} │ ${role} │ ${info.name}`);
+    console.log(`  ${username.padEnd(15)} │ ${role} │ ${info.name}`);
   }
   console.log('─'.repeat(60));
   console.log('\n📊 DỮ LIỆU MẪU:');

@@ -43,8 +43,8 @@ function formatVND(amount: number): string {
 
 // Pairing suggestions to increase avg bill
 const PAIRING_MAP: Record<string, string[]> = {
-  'KITCHEN': ['Heineken Bạc', 'Tiger', 'Bia Sài Gòn Special', 'Cocktail Signature Báo Garden'],
-  'BAR': ['Mẹt khô tổng hợp', 'Khô gà lá chanh', 'Hàu nướng phô mai', 'Mực nướng sa tế'],
+  'KITCHEN': ['Heineken lon 250ml', 'Tiger lon', 'Heineken tháp 2 lít', 'Cocktail tháp 3L - The Eight One'],
+  'BAR': ['Khô mực cháy tỏi', 'Nghêu nướng mỡ chài', 'Bắp bò ngâm nước mắm', 'Que hải sản chiên giòn'],
 };
 
 // ==================== COMPONENT ====================
