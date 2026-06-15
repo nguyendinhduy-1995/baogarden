@@ -617,21 +617,30 @@ const CSS = `
 
   /* ══ Responsive ══ */
   @media(max-width:1024px){
-    .ev-tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px}
+    .ev-tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px;scrollbar-width:none;-ms-overflow-style:none}
+    .ev-tabs::-webkit-scrollbar{display:none}
     .ev-tab{white-space:nowrap;flex-shrink:0}
     .ev-form-grid{grid-template-columns:1fr 1fr}
   }
   @media(max-width:640px){
-    .ev-tabs{gap:4px}
-    .ev-tab{padding:8px 12px;font-size:12px}
+    .ev-tabs{gap:2px}
+    .ev-tab{padding:8px 10px;font-size:11px}
     .ev-form-grid{grid-template-columns:1fr}
-    .ev-card{padding:14px}
-    .ev-card-header{flex-direction:column;align-items:flex-start}
+    .ev-card{padding:12px;border-radius:10px}
+    .ev-card-header{flex-direction:column;align-items:flex-start;gap:6px}
+    .ev-card-controls{width:100%;justify-content:flex-end}
     .ev-card-name{font-size:14px}
-    .ev-btn-add{width:100%;text-align:center}
+    .ev-card-desc{font-size:12px}
+    .ev-btn-add{width:100%;text-align:center;padding:10px 20px;min-height:44px}
     .ev-toolbar{justify-content:stretch}
-    .ev-actions{flex-direction:column}
-    .ev-btn-save,.ev-btn-cancel{width:100%;text-align:center}
-    .ev-btn-edit,.ev-btn-delete{padding:6px 14px;font-size:13px}
+    .ev-actions{flex-direction:column;gap:6px}
+    .ev-btn-save,.ev-btn-cancel{width:100%;text-align:center;min-height:44px}
+    .ev-btn-edit,.ev-btn-delete{padding:8px 14px;font-size:13px;min-height:40px}
+    .ev-input{padding:12px 14px;font-size:14px;min-height:44px}
+    .ev-textarea{padding:12px 14px;font-size:14px;min-height:80px}
+    .ev-day-badge{font-size:11px;padding:2px 8px}
+    .ev-type-badge{font-size:10px}
+    .ev-card-meta{font-size:11px}
+    .ev-loading{padding:40px}
   }
 `;

@@ -546,23 +546,39 @@ const CSS = `
 
 /* Responsive */
 @media(max-width:1024px){
-  .mn-cats-list{overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap;padding-bottom:4px}
+  .mn-cats-list{overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap;padding-bottom:4px;scrollbar-width:none;-ms-overflow-style:none}
+  .mn-cats-list::-webkit-scrollbar{display:none}
   .mn-cat-item{white-space:nowrap;flex-shrink:0}
   .mn-filters{flex-wrap:wrap}
+  .mn-table{min-width:650px}
 }
 @media(max-width:640px){
   .mn-hide-mobile{display:none}
   .mn-show-mobile{display:flex}
   .mn-header{flex-direction:column;gap:10px}
-  .mn-header-actions{width:100%;justify-content:flex-end}
+  .mn-header-actions{width:100%;justify-content:stretch;gap:6px}
+  .mn-header-actions button{flex:1}
+  .mn-title{font-size:1.1rem}
+  .mn-sub{font-size:0.75rem}
   .mn-form-row{grid-template-columns:1fr}
-  .mn-filters{flex-direction:column}
+  .mn-filters{flex-direction:column;gap:8px}
   .mn-search{min-width:0;width:100%}
   .mn-modal-overlay{padding:0;align-items:flex-end}
-  .mn-modal{border-radius:20px 20px 0 0;max-height:92vh}
-  .mn-modal-body{padding:16px}
-  .mn-btn-cancel,.mn-btn-save{flex:1}
-  .mn-card-top{flex-direction:column;gap:4px}
+  .mn-modal{border-radius:20px 20px 0 0;max-height:92vh;width:100%;max-width:100%}
+  .mn-modal-header{padding:14px 16px}
+  .mn-modal-header h2{font-size:1rem}
+  .mn-modal-body{padding:14px 16px}
+  .mn-modal-footer{padding:12px 16px}
+  .mn-btn-cancel,.mn-btn-save{flex:1;min-height:44px}
+  .mn-card{padding:12px}
+  .mn-card-top{flex-direction:column;gap:6px}
   .mn-card-price{align-self:flex-start}
+  .mn-card-meta{flex-wrap:wrap;gap:6px}
+  .mn-card-actions{flex-direction:column}
+  .mn-act-edit,.mn-act-del{width:100%;text-align:center;min-height:40px}
+  .mn-cats-list{gap:4px}
+  .mn-cat-item{padding:6px 10px;font-size:0.72rem}
+  .mn-table{min-width:550px}
+  .mn-fg input,.mn-fg select{min-height:44px;font-size:0.88rem}
 }
 `;

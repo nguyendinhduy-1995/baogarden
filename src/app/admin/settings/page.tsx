@@ -210,13 +210,24 @@ const CSS = `
 .st-toggle-on .st-toggle-thumb{left:25px;background:var(--gold-400)}
 
 /* responsive */
+@media(max-width:1024px){
+  .st-form-row{grid-template-columns:1fr 1fr}
+}
 @media(max-width:640px){
-  .st-header{flex-direction:column;gap:12px}
+  .st-header{flex-direction:column;gap:10px}
   .st-save-btn{width:100%;text-align:center}
-  .st-title{font-size:1.2rem}
+  .st-title{font-size:1.1rem}
+  .st-sub{font-size:0.75rem}
   .st-form-row{grid-template-columns:1fr}
-  .st-section-head{padding:var(--space-lg)}
-  .st-section-body{padding:var(--space-lg)}
-  .st-toggle-row{gap:var(--space-md)}
+  .st-section-head{padding:14px 16px;flex-direction:column;gap:8px}
+  .st-section-head h3{font-size:0.92rem}
+  .st-section-head p{font-size:0.75rem}
+  .st-section-body{padding:14px 16px}
+  .st-toggle-row{gap:12px}
+  .st-toggle-label{font-size:0.85rem}
+  .st-toggle-desc{font-size:0.75rem}
+  .st-fg input,.st-fg select,.st-fg textarea{font-size:0.88rem;min-height:44px}
+  .st-fg label{font-size:0.68rem}
+  .st-sections{gap:12px}
 }
 `;

@@ -776,17 +776,32 @@ const CSS = `
   .cu-filters{flex-direction:column;align-items:stretch}
   .cu-search-box{max-width:none}
   .cu-skeleton-stats{grid-template-columns:1fr 1fr}
+  .cu-table{min-width:600px}
 }
 @media(max-width:640px){
   .cu-hide-mobile{display:none}
   .cu-show-mobile{display:flex}
-  .cu-filters{flex-direction:column;align-items:stretch}
+  .cu-header{flex-direction:column;gap:10px}
+  .cu-title{font-size:1.1rem}
+  .cu-sub{font-size:0.75rem}
+  .cu-btn{width:100%;text-align:center;justify-content:center}
+  .cu-filters{flex-direction:column;align-items:stretch;gap:8px}
   .cu-search-box{max-width:none}
   .cu-form-row{grid-template-columns:1fr}
-  .cu-toast{left:12px;right:12px;top:12px}
+  .cu-modal-overlay{padding:0;align-items:flex-end}
+  .cu-modal{border-radius:20px 20px 0 0;max-height:95vh;width:100%;max-width:100%}
+  .cu-modal-head{padding:14px 16px}
+  .cu-modal-head h2{font-size:1rem}
+  .cu-modal-body{padding:14px 16px}
+  .cu-modal-foot{padding:12px 16px}
+  .cu-modal-foot button{flex:1;min-height:44px}
+  .cu-toast{left:12px;right:12px;top:12px;transform:none;white-space:normal;text-align:center}
   .cu-skeleton-stats{grid-template-columns:1fr}
   .cu-card-meta{flex-wrap:wrap;gap:8px}
   .cu-card-actions{flex-direction:column}
   .cu-act-btn{width:100%}
+  .cu-card{padding:12px}
+  .cu-card-revenue{font-size:0.88rem}
+  .cu-table{min-width:500px}
 }
 `;

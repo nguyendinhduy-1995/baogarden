@@ -898,27 +898,36 @@ const CSS = `
   .tb-area-tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap}
   .tb-area-tab{white-space:nowrap;flex-shrink:0}
   .tb-floor{height:450px}
+  .tb-table{min-width:600px}
 }
 @media(max-width:640px){
-  .tb-header{flex-direction:column;gap:12px}
-  .tb-header-actions{width:100%;justify-content:space-between}
-  .tb-title{font-size:1.2rem}
-  .tb-filters{flex-direction:column;align-items:stretch;gap:var(--space-md)}
+  .tb-header{flex-direction:column;gap:10px}
+  .tb-header-actions{width:100%;justify-content:stretch;gap:6px}
+  .tb-header-actions button,.tb-header-actions a{flex:1;text-align:center;justify-content:center}
+  .tb-title{font-size:1.1rem}
+  .tb-sub{font-size:0.75rem}
+  .tb-filters{flex-direction:column;align-items:stretch;gap:8px}
   .tb-search-wrap{max-width:unset}
-  .tb-area-tabs{width:100%}
+  .tb-area-tabs{width:100%;gap:4px}
+  .tb-area-tab{padding:6px 10px;font-size:0.75rem}
   .tb-hide-m{display:none}
   .tb-show-m{display:flex}
   .tb-form-row{grid-template-columns:1fr}
-  .tb-modal{border-radius:20px 20px 0 0;max-height:95vh;align-self:flex-end}
-  .tb-modal-head{padding:16px 20px}
-  .tb-modal-body{padding:16px 20px}
-  .tb-modal-foot{padding:12px 20px}
-  .tb-floor{height:350px}
-  .tb-legend{top:var(--space-sm);right:var(--space-sm);padding:var(--space-sm)}
+  .tb-modal-overlay{padding:0;align-items:flex-end}
+  .tb-modal{border-radius:20px 20px 0 0;max-height:95vh;width:100%;max-width:100%}
+  .tb-modal-head{padding:14px 16px}
+  .tb-modal-head h2{font-size:1rem}
+  .tb-modal-body{padding:14px 16px}
+  .tb-modal-foot{padding:12px 16px}
+  .tb-modal-foot button{flex:1;min-height:44px}
+  .tb-floor{height:300px}
+  .tb-legend{top:6px;right:6px;padding:6px 8px;font-size:0.65rem}
   .tb-act{min-height:44px;padding:8px 14px;font-size:0.78rem}
-  .tb-qr-modal{max-width:100%}
-  .tb-qr-actions{grid-template-columns:1fr 1fr}
-  .tb-qr-code-big{font-size:1.5rem}
-  .tb-qr-preview{padding:20px 16px}
+  .tb-qr-modal{max-width:100%;border-radius:20px 20px 0 0}
+  .tb-qr-actions{grid-template-columns:1fr 1fr;gap:6px}
+  .tb-qr-code-big{font-size:1.4rem}
+  .tb-qr-preview{padding:16px 12px}
+  .tb-qr-url{font-size:0.7rem}
+  .tb-table{min-width:500px}
 }
 `;

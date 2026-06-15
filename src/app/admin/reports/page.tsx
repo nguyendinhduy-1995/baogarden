@@ -437,18 +437,32 @@ const CSS = `
 @media(max-width:1024px){
   .rp-stats{grid-template-columns:repeat(2,1fr)}
   .rp-contrib-track{width:60px}
+  .rp-fill-track{width:50px}
 }
 @media(max-width:640px){
-  .rp-filters{flex-direction:column;align-items:stretch;gap:var(--space-md)}
+  .rp-filters{flex-direction:column;align-items:stretch;gap:8px}
   .rp-date-inputs{flex-wrap:wrap;gap:6px}
-  .rp-date-input{flex:1;min-width:0}
-  .rp-quick-btns{flex-wrap:wrap}
-  .rp-stats{grid-template-columns:1fr 1fr}
-  .rp-chart-scroll{margin:0 calc(var(--space-xl) * -1);padding:0 var(--space-xl)}
-  .rp-chart{min-width:500px}
-  .rp-table-scroll{margin:0 calc(var(--space-xl) * -1);padding:0 var(--space-xl)}
-  .rp-card{padding:var(--space-lg)}
-  .rp-section-title{font-size:0.95rem}
+  .rp-date-input{flex:1;min-width:0;font-size:0.82rem}
+  .rp-date-label{font-size:0.72rem}
+  .rp-quick-btns{flex-wrap:wrap;gap:4px}
+  .rp-quick-btns button{flex:1;min-width:0;font-size:0.75rem;padding:6px 8px;min-height:36px}
+  .rp-stats{grid-template-columns:1fr 1fr;gap:8px}
+  .rp-chart-scroll{margin:0 -14px;padding:0 14px}
+  .rp-chart{min-width:480px;height:150px}
+  .rp-chart-col{min-width:24px}
+  .rp-chart-bar{max-width:24px}
+  .rp-chart-label{font-size:0.62rem}
+  .rp-chart-count{font-size:0.58rem}
+  .rp-table-scroll{margin:0 -14px;padding:0 14px}
+  .rp-card{padding:14px}
+  .rp-card{margin-bottom:16px}
+  .rp-section-title{font-size:0.9rem}
   .rp-contrib-track{width:40px}
+  .rp-contrib-pct{font-size:0.72rem}
+  .rp-fill-track{width:36px}
+  .rp-status-row{font-size:0.78rem}
+  .rp-bar-track{height:5px}
+  .rp-td-secondary{font-size:0.78rem}
+  .rp-empty-text{font-size:0.78rem}
 }
 `;

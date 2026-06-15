@@ -342,4 +342,20 @@ const CSS = `
   font-size: 10px; color: #333; font-weight: 500;
   letter-spacing: 0.05em;
 }
+
+/* responsive */
+@media(max-width:640px){
+  .lg-wrapper{padding:16px}
+  .lg-card{padding:24px 20px 22px;border-radius:20px}
+  .lg-logo{font-size:26px;letter-spacing:0.14em}
+  .lg-tagline{font-size:8px;letter-spacing:0.3em}
+  .lg-brand{margin-bottom:24px}
+  .lg-title{font-size:18px;margin-bottom:20px}
+  .lg-field input{padding:16px 14px 8px;font-size:14px;border-radius:12px}
+  .lg-field label{left:14px;top:13px;font-size:14px}
+  .lg-btn{padding:14px 20px;font-size:14px;border-radius:12px}
+  .lg-divider{margin:18px 0 12px}
+  .lg-back{margin-top:18px;font-size:12px}
+  .lg-footer{margin-top:20px}
+}
 `;

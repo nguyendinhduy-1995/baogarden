@@ -617,16 +617,42 @@ const CSS = `
   .ds-quick{grid-template-columns:repeat(2,1fr)}
 }
 @media(max-width:640px){
-  .ds-greeting{font-size:1.2rem}
-  .ds-stats{grid-template-columns:1fr 1fr}
+  .ds-header{flex-direction:column;gap:8px}
+  .ds-greeting{font-size:1.15rem}
+  .ds-date{font-size:0.78rem}
+  .ds-add-btn{width:100%;text-align:center;padding:10px 14px;font-size:0.82rem}
+  .ds-stats{grid-template-columns:1fr 1fr;gap:8px}
   .ds-stat{padding:12px}
-  .ds-stat-val{font-size:1.15rem}
-  .ds-kpi-row{grid-template-columns:1fr 1fr}
+  .ds-stat-label{font-size:0.68rem}
+  .ds-stat-val{font-size:1.1rem}
+  .ds-kpi-row{grid-template-columns:1fr 1fr;gap:8px}
   .ds-kpi{padding:12px}
-  .ds-kpi-val{font-size:1.2rem}
-  .ds-quick{grid-template-columns:1fr 1fr}
+  .ds-kpi-label{font-size:0.68rem}
+  .ds-kpi-val{font-size:1.15rem}
+  .ds-sec-head{flex-direction:column;align-items:flex-start;gap:4px}
+  .ds-sec-title{font-size:0.92rem}
+  .ds-trend{padding:12px;gap:4px;min-height:100px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .ds-trend-col{min-width:36px}
+  .ds-trend-bar{max-width:28px}
+  .ds-trend-day{font-size:0.6rem}
+  .ds-trend-count{font-size:0.58rem}
+  .ds-trend-rev{font-size:0.52rem}
+  .ds-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .ds-table{min-width:500px}
   .ds-hide-mobile{display:none}
   .ds-show-mobile{display:flex}
-  .ds-add-btn{padding:8px 14px;font-size:0.78rem}
+  .ds-card-meta{flex-wrap:wrap;gap:8px}
+  .ds-card-actions{flex-wrap:wrap}
+  .ds-act-btn{padding:8px 14px;font-size:0.78rem;min-height:40px}
+  .ds-act-full{flex:1;min-width:0}
+  .ds-quick{grid-template-columns:1fr 1fr;gap:8px}
+  .ds-quick-item{padding:12px 8px;font-size:0.78rem}
+  .ds-activity{border-radius:10px}
+  .ds-act-item{padding:8px 12px}
+  .ds-act-content{flex-direction:column;gap:2px}
+  .ds-act-time{align-self:flex-start}
+  .ds-act-text{font-size:0.78rem}
+  .ds-empty{padding:24px 16px}
+  .ds-section{margin-bottom:16px}
 }
 `;

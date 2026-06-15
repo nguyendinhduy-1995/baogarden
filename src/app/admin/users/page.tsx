@@ -688,20 +688,30 @@ const CSS = `
 @media(max-width:1024px){
   .us-filters{flex-direction:column;align-items:stretch}
   .us-search-box{max-width:none}
+  .us-table{min-width:600px}
 }
 @media(max-width:640px){
   .us-hide-mobile{display:none}
   .us-show-mobile{display:flex}
-  .us-title{font-size:1.2rem}
-  .us-form-row{grid-template-columns:1fr}
-  .us-modal{border-radius:20px 20px 0 0;max-height:95vh;align-self:flex-end}
-  .us-modal-head{padding:16px 20px}
-  .us-modal-body{padding:16px 20px}
-  .us-modal-foot{padding:12px 20px}
-  .us-confirm{border-radius:20px 20px 0 0;align-self:flex-end}
-  .us-filters{flex-direction:column;align-items:stretch}
+  .us-header{flex-direction:column;gap:10px}
+  .us-title{font-size:1.1rem}
+  .us-sub{font-size:0.75rem}
+  .us-btn{width:100%;text-align:center;justify-content:center}
+  .us-filters{flex-direction:column;align-items:stretch;gap:8px}
   .us-search-box{max-width:none}
-  .us-toast{left:12px;right:12px;transform:none;white-space:normal}
-  .us-act{min-height:44px;padding:8px 14px}
+  .us-form-row{grid-template-columns:1fr}
+  .us-modal-overlay{padding:0;align-items:flex-end}
+  .us-modal{border-radius:20px 20px 0 0;max-height:95vh;width:100%;max-width:100%}
+  .us-modal-head{padding:14px 16px}
+  .us-modal-head h2{font-size:1rem}
+  .us-modal-body{padding:14px 16px}
+  .us-modal-foot{padding:12px 16px}
+  .us-modal-foot button{flex:1;min-height:44px}
+  .us-confirm{border-radius:20px 20px 0 0;align-self:flex-end;width:100%;max-width:100%}
+  .us-confirm-btns{flex-direction:column}
+  .us-confirm-btns button{width:100%;min-height:44px}
+  .us-toast{left:12px;right:12px;transform:none;white-space:normal;text-align:center}
+  .us-act{min-height:44px;padding:8px 14px;font-size:0.78rem}
+  .us-table{min-width:500px}
 }
 `;
