@@ -22,11 +22,15 @@ export async function POST(request: Request) {
       );
     }
 
+    // Support both username (e.g. "admin") and full email (e.g. "admin@baogarden.vn")
+    const loginInput = username.toLowerCase().trim();
+    const emailToSearch = loginInput.includes('@') ? loginInput : `${loginInput}@baogarden.vn`;
+    
     const user = await prisma.user.findFirst({
       where: {
         OR: [
-          { email: username.toLowerCase().trim() },
-          { email: username.toLowerCase().trim().includes('@') ? username.toLowerCase().trim() : `${username.toLowerCase().trim()}@baogarden.vn` },
+          { email: loginInput },
+          { email: emailToSearch },
         ],
       },
     });
@@ -74,7 +78,8 @@ export async function POST(request: Request) {
     response.headers.set('Set-Cookie', setAuthCookie(token));
 
     return response;
-  } catch {
+  } catch (err) {
+    console.error('Login error:', err);
     return NextResponse.json(
       { success: false, error: 'Đã xảy ra lỗi server' },
       { status: 500 }
